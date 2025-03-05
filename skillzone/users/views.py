@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from .models import Profile
 from django.db.utils import IntegrityError
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 
 def index(request):
     return JsonResponse({"message": "Welcome to Skillzone API!"})
@@ -46,7 +47,7 @@ def login(request):
 @permission_classes([IsAuthenticated])
 def get_profile(request):
     """Fetches user profile details"""
-    profile = request.user.profile
+    profile = get_object_or_404(Profile, user=request.user)
     return JsonResponse({"username": request.user.username, "points": profile.points})
 
 @api_view(['POST'])

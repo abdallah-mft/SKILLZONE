@@ -62,6 +62,3 @@ def update_points(request):
     request.user.profile.points += points_to_add
     request.user.profile.save()
     return JsonResponse({"message": "Points updated", "new_points": request.user.profile.points})
-
-
-#c

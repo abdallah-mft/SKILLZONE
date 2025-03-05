@@ -64,4 +64,3 @@ def update_points(request):
     return JsonResponse({"message": "Points updated", "new_points": request.user.profile.points})
 
 
-#  ✅✅✅✅✅✅✅  

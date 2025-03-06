@@ -4,21 +4,19 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.http import JsonResponse
-from .models import Profile
-from django.db.utils import IntegrityError
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.db.utils import IntegrityError
+from .models import Profile
 
 def index(request):
     return JsonResponse({"message": "Welcome to Skillzone API!"})
-
 
 @api_view(['POST'])
 def register(request):
     """Registers a new user"""
     username = request.data.get('username')
     password = request.data.get('password')
-    
+
     if not username or not password:
         return JsonResponse({"error": "Username and password required"}, status=400)
 
@@ -62,3 +60,16 @@ def update_points(request):
     request.user.profile.points += points_to_add
     request.user.profile.save()
     return JsonResponse({"message": "Points updated", "new_points": request.user.profile.points})
+
+@api_view(['GET'])
+def users_index(request):
+    """API index - Lists available endpoints"""
+    return JsonResponse({
+        "message": "Welcome to the Users API!",
+        "endpoints": {
+            "register": "/api/users/register/",
+            "login": "/api/users/login/",
+            "profile": "/api/users/profile/",
+            "update_points": "/api/users/update-points/"
+        }
+    })

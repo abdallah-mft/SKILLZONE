@@ -1,52 +1,136 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from django.http import JsonResponse
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404
 from django.db.utils import IntegrityError
 from .models import Profile
+from .serializers import UserSerializer, ProfileSerializer
 
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def index(request):
-    return JsonResponse({"message": "Welcome to Skillzone API!"})
+    return Response({"message": "Welcome to Skillzone API!"})
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register(request):
-    """Registers a new user"""
+    """Registers a new user with email, username, password, and full name"""
+    email = request.data.get('email')
     username = request.data.get('username')
     password = request.data.get('password')
+    first_name = request.data.get('first_name', '')
+    last_name = request.data.get('last_name', '')
 
-    if not username or not password:
-        return JsonResponse({"error": "Username and password required"}, status=400)
+    # Validation
+    if not all([email, username, password]):
+        return Response({
+            "error": "Email, username, and password are required"
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if email already exists
+    if User.objects.filter(email=email).exists():
+        return Response({
+            "error": "Email already registered"
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if username already exists
+    if User.objects.filter(username=username).exists():
+        return Response({
+            "error": "Username already exists"
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validate email format
+    try:
+        from django.core.validators import validate_email
+        validate_email(email)
+    except:
+        return Response({
+            "error": "Invalid email format"
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        user = User.objects.create_user(username=username, password=password)
-        Profile.objects.create(user=user)  # Create a profile for the new user
+        # Create user only after all validations pass
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name
+        )
+        
+        # Don't create profile here - it's created by the signal
+        # Get the profile that was created by the signal
+        profile = user.profile
+        
+        # Generate token
         token, _ = Token.objects.get_or_create(user=user)
-        return JsonResponse({"message": "User registered successfully", "token": token.key}, status=201)
-    except IntegrityError:
-        return JsonResponse({"error": "Username already exists"}, status=400)
+        
+        serializer = ProfileSerializer(profile)
+        return Response({
+            "message": "User registered successfully",
+            "token": token.key,
+            "user": serializer.data
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        # If any error occurs during user creation, delete the user
+        if 'user' in locals():
+            user.delete()
+        return Response({
+            "error": str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login(request):
-    """Logs in a user and returns a token"""
-    username = request.data.get('username')
+    """Logs in a user using email and password"""
+    email = request.data.get('email')
     password = request.data.get('password')
 
-    user = authenticate(username=username, password=password)
-    if user:
-        token, _ = Token.objects.get_or_create(user=user)
-        return JsonResponse({"message": "Login successful", "token": token.key})
-    else:
-        return JsonResponse({"error": "Invalid credentials"}, status=400)
+    if not email or not password:
+        return Response({
+            "error": "Email and password are required"
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Get user by email
+        user = User.objects.get(email=email)
+        
+        # Authenticate using username (since Django's authenticate uses username)
+        user = authenticate(username=user.username, password=password)
+        
+        if user:
+            token, _ = Token.objects.get_or_create(user=user)
+            profile = get_object_or_404(Profile, user=user)
+            serializer = ProfileSerializer(profile)
+            
+            return Response({
+                "message": "Login successful",
+                "token": token.key,
+                "user": serializer.data
+            })
+        else:
+            return Response({
+                "error": "Invalid credentials"
+            }, status=status.HTTP_401_UNAUTHORIZED)
+            
+    except User.DoesNotExist:
+        return Response({
+            "error": "No user found with this email"
+        }, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_profile(request):
     """Fetches user profile details"""
     profile = get_object_or_404(Profile, user=request.user)
-    return JsonResponse({"username": request.user.username, "points": profile.points})
+    serializer = ProfileSerializer(profile)
+    return Response(serializer.data)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -54,12 +138,19 @@ def update_points(request):
     """Updates user points"""
     points_to_add = request.data.get('points', 0)
 
-    if not isinstance(points_to_add, int) or points_to_add < 0:
-        return JsonResponse({"error": "Invalid points value"}, status=400)
+    if not isinstance(points_to_add, (int, float)) or points_to_add < 0:
+        return Response({
+            "error": "Invalid points value"
+        }, status=status.HTTP_400_BAD_REQUEST)
 
-    request.user.profile.points += points_to_add
-    request.user.profile.save()
-    return JsonResponse({"message": "Points updated", "new_points": request.user.profile.points})
+    profile = request.user.profile
+    profile.points += points_to_add
+    profile.save()
+
+    return Response({
+        "message": "Points updated successfully",
+        "new_points": profile.points
+    }, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def users_index(request):

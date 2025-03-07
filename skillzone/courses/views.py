@@ -1,26 +1,21 @@
-from django.shortcuts import render
 from rest_framework.decorators import api_view
-from django.http import JsonResponse
+from rest_framework.response import Response
+from rest_framework import status
 from .models import Course
+from .serializers import CourseSerializer
 
 @api_view(['GET'])
 def courses_list(request):
-    courses = Course.objects.all().values('id', 'title', 'description')
-    return JsonResponse({"courses": list(courses)})
+    courses = Course.objects.all()
+    serializer = CourseSerializer(courses, many=True)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 def course_detail(request, course_id):
     try:
         course = Course.objects.get(id=course_id)
-        # Use related_name "lessons" to get all lessons for this course
-        lessons = course.lessons.all().values('id', 'title', 'video_url', 'points_required')
-        data = {
-            "id": course.id,
-            "title": course.title,
-            "description": course.description,
-            "lessons": list(lessons)
-        }
-        return JsonResponse(data)
+        serializer = CourseSerializer(course)
+        return Response(serializer.data)
     except Course.DoesNotExist:
-        return JsonResponse({"error": "Course not found"}, status=404)
+        return Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
 

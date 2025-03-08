@@ -1,0 +1,3 @@
+# Add these if not already present
+.env
+*.sqlite3

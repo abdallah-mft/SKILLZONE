@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.db.utils import IntegrityError
 from .models import Profile
 from .serializers import UserSerializer, ProfileSerializer
+from rest_framework_simplejwt.tokens import RefreshToken  # Add this import
 
 
 @api_view(['GET'])
@@ -100,14 +101,11 @@ def login(request):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get user by email
         user = User.objects.get(email=email)
-        
-        # Authenticate using username
         user = authenticate(username=user.username, password=password)
         
         if user:
-            token, _ = Token.objects.get_or_create(user=user)
+            refresh = RefreshToken.for_user(user)  # Generate JWT
             profile = get_object_or_404(Profile, user=user)
             serializer = ProfileSerializer(profile)
             
@@ -115,7 +113,8 @@ def login(request):
                 "success": True,
                 "message": "Login successful",
                 "data": {
-                    "token": token.key,
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
                     "user": serializer.data
                 }
             })

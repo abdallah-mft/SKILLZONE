@@ -15,7 +15,7 @@ from .serializers import UserSerializer, ProfileSerializer
 @permission_classes([AllowAny])
 def index(request):
     return Response({"message": "Welcome to Skillzone API!"})
-
+        
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
@@ -89,19 +89,21 @@ def register(request):
 @permission_classes([AllowAny])
 def login(request):
     """Logs in a user using email and password"""
-    email = request.data.get('email')
-    password = request.data.get('password')
-
-    if not email or not password:
-        return Response({
-            "error": "Email and password are required"
-        }, status=status.HTTP_400_BAD_REQUEST)
-
     try:
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        if not email or not password:
+            return Response({
+                "success": False,
+                "message": "Email and password are required",
+                "data": None
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         # Get user by email
         user = User.objects.get(email=email)
         
-        # Authenticate using username (since Django's authenticate uses username)
+        # Authenticate using username
         user = authenticate(username=user.username, password=password)
         
         if user:
@@ -110,19 +112,32 @@ def login(request):
             serializer = ProfileSerializer(profile)
             
             return Response({
+                "success": True,
                 "message": "Login successful",
-                "token": token.key,
-                "user": serializer.data
+                "data": {
+                    "token": token.key,
+                    "user": serializer.data
+                }
             })
         else:
             return Response({
-                "error": "Invalid credentials"
+                "success": False,
+                "message": "Invalid credentials",
+                "data": None
             }, status=status.HTTP_401_UNAUTHORIZED)
-            
+
     except User.DoesNotExist:
         return Response({
-            "error": "No user found with this email"
+            "success": False,
+            "message": "User not found",
+            "data": None
         }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            "success": False,
+            "message": str(e),
+            "data": None
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -163,4 +178,27 @@ def users_index(request):
             "profile": "/api/users/profile/",
             "update_points": "/api/users/update-points/"
         }
+    })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_device_token(request):
+    """Updates user's device token for push notifications"""
+    device_token = request.data.get('device_token')
+    
+    if not device_token or len(device_token.strip()) == 0:
+        return Response({
+            "success": False,
+            "message": "Valid device token is required",
+            "data": None
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    profile = request.user.profile
+    profile.device_token = device_token.strip()
+    profile.save()
+    
+    return Response({
+        "success": True,
+        "message": "Device token updated successfully",
+        "data": {"device_token": device_token}
     })

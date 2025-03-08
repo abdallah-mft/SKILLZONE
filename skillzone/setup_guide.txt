@@ -1,0 +1,133 @@
+===========================================
+🚀 SKILLZONE BACKEND SETUP GUIDE 🚀
+===========================================
+
+1️⃣ VIRTUAL ENVIRONMENT SETUP
+-------------------------------------------
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows:
+venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
+
+2️⃣ REQUIRED PACKAGES
+-------------------------------------------
+# Core packages
+pip install django
+pip install djangorestframework
+pip install django-cors-headers
+pip install firebase-admin
+pip install django-cache-memoize
+
+# Create requirements.txt
+pip freeze > requirements.txt
+
+# Install from requirements.txt (for other developers)
+pip install -r requirements.txt
+
+3️⃣ PROJECT SETUP COMMANDS
+-------------------------------------------
+# Create Django project
+django-admin startproject skillzone
+
+# Create apps
+python manage.py startapp users
+python manage.py startapp courses
+
+# Database setup
+python manage.py makemigrations
+python manage.py migrate
+python manage.py createsuperuser
+
+4️⃣ RUN DEVELOPMENT SERVER
+-------------------------------------------
+python manage.py runserver
+
+5️⃣ API ENDPOINTS
+-------------------------------------------
+Users:
+- POST /api/users/register/
+- POST /api/users/login/
+- GET  /api/users/profile/
+- POST /api/users/update-points/
+- POST /api/users/update-device-token/
+
+Courses:
+- GET  /api/courses/
+- GET  /api/courses/<id>/
+
+6️⃣ FLUTTER FRONTEND REQUIREMENTS
+-------------------------------------------
+# CORS Headers (add to settings.py)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+7️⃣ PRODUCTION DEPLOYMENT
+-------------------------------------------
+# Collect static files
+python manage.py collectstatic
+
+# Set environment variables
+DEBUG=False
+SECRET_KEY=your-secret-key
+ALLOWED_HOSTS=your-domain.com
+
+8️⃣ USEFUL COMMANDS
+-------------------------------------------
+# Make migrations for specific app
+python manage.py makemigrations users
+python manage.py makemigrations courses
+
+# Show migrations status
+python manage.py showmigrations
+
+# Shell
+python manage.py shell
+
+# Clear cache
+python manage.py clearcache
+
+# Run tests
+python manage.py test
+
+===========================================
+📝 NOTES
+-------------------------------------------
+1. Always activate virtual environment before running commands
+2. Keep requirements.txt updated when adding new packages
+3. Never commit sensitive data (SECRET_KEY, passwords, etc.)
+4. Use environment variables for sensitive data in production
+5. Regular database backups recommended
+
+===========================================
+🔧 TROUBLESHOOTING
+-------------------------------------------
+1. Migration issues:
+   - Delete all migrations files (except __init__.py)
+   - Delete db.sqlite3
+   - Run makemigrations and migrate again
+
+2. CORS issues:
+   - Check CORS settings in settings.py
+   - Verify allowed origins
+
+3. Package conflicts:
+   - Delete venv
+   - Create new venv
+   - Reinstall requirements
+
+===========================================

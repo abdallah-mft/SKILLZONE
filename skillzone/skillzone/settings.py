@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'courses',
-    'corsheaders',  # Add this
+    'corsheaders',
+    'quizzes.apps.QuizzesConfig',
 ]
 
 REST_FRAMEWORK = {

@@ -158,12 +158,19 @@ def update_points(request):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     profile = request.user.profile
+    old_level = profile.get_level()
+    
     profile.points += points_to_add
     profile.save()
+    
+    new_level = profile.get_level()
+    level_changed = old_level != new_level if old_level and new_level else False
 
+    serializer = ProfileSerializer(profile)
     return Response({
         "message": "Points updated successfully",
-        "new_points": profile.points
+        "level_up": level_changed,
+        "profile": serializer.data
     }, status=status.HTTP_200_OK)
 
 @api_view(['GET'])

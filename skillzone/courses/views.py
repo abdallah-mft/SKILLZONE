@@ -58,37 +58,25 @@ def courses_list(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def course_detail(request, course_id):
-    """Get detailed course information"""
     try:
         course = get_object_or_404(Course, id=course_id)
         user_profile = request.user.profile
         
-        # Check if course is unlocked (for HARD courses)
-        is_unlocked = (
-            course.course_type == 'SOFT' or
-            UnlockedCourse.objects.filter(user=user_profile, course=course).exists()
-        )
-        
         serializer = CourseSerializer(course, context={'request': request})
         data = serializer.data
         data['user_points'] = user_profile.points
-        data['can_access'] = is_unlocked
-        data['needs_unlock'] = course.course_type == 'HARD' and not is_unlocked
-        
-        if not is_unlocked and course.course_type == 'HARD':
-            data['lessons'] = []  # Hide lessons if course is not unlocked
         
         return Response({
             "success": True,
             "message": "Course details retrieved successfully",
             "data": data
         })
-    except Course.DoesNotExist:
+    except Exception as e:
         return Response({
             "success": False,
-            "message": "Course not found",
+            "message": str(e),
             "data": None
-        }, status=status.HTTP_404_NOT_FOUND)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

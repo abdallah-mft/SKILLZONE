@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'courses',
     'corsheaders',
     'quizzes.apps.QuizzesConfig',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 REST_FRAMEWORK = {

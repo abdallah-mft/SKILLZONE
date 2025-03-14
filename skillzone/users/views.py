@@ -201,3 +201,26 @@ def update_device_token(request):
         "message": "Device token updated successfully",
         "data": {"device_token": device_token}
     })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    try:
+        refresh_token = request.data.get('refresh_token')
+        if refresh_token:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({
+                "success": True,
+                "message": "Successfully logged out"
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "success": False,
+                "message": "Refresh token is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            "success": False,
+            "message": str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)

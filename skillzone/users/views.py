@@ -89,24 +89,38 @@ def register(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
-    """Logs in a user using email and password"""
+    """Logs in a user using email or username and password"""
     try:
-        email = request.data.get('email')
+        # Accept either email or username field
+        identifier = request.data.get('email') or request.data.get('username')
         password = request.data.get('password')
 
-        if not email or not password:
+        if not identifier or not password:
             return Response({
                 "success": False,
-                "message": "Email and password are required",
+                "message": "Email/username and password are required",
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        user = User.objects.get(email=email)
-        user = authenticate(username=user.username, password=password)
+        # Try to get user by email first, then username if email fails
+        try:
+            user = User.objects.get(email=identifier)
+        except User.DoesNotExist:
+            try:
+                user = User.objects.get(username=identifier)
+            except User.DoesNotExist:
+                return Response({
+                    "success": False,
+                    "message": "User not found",
+                    "data": None
+                }, status=status.HTTP_404_NOT_FOUND)
+
+        # Authenticate user
+        authenticated_user = authenticate(username=user.username, password=password)
         
-        if user:
-            refresh = RefreshToken.for_user(user)  # Generate JWT
-            profile = get_object_or_404(Profile, user=user)
+        if authenticated_user:
+            refresh = RefreshToken.for_user(authenticated_user)
+            profile = get_object_or_404(Profile, user=authenticated_user)
             serializer = ProfileSerializer(profile)
             
             return Response({
@@ -125,12 +139,6 @@ def login(request):
                 "data": None
             }, status=status.HTTP_401_UNAUTHORIZED)
 
-    except User.DoesNotExist:
-        return Response({
-            "success": False,
-            "message": "User not found",
-            "data": None
-        }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({
             "success": False,

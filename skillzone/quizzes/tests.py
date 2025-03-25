@@ -65,13 +65,17 @@ class TestQuizAPI:
         start_url = reverse('start-quiz', kwargs={'quiz_id': quiz.id})
         start_response = api_client.post(start_url)
         
-        # Submit answers
+        # Submit answers - Add format='json' here
         submit_url = reverse('submit-quiz', kwargs={'quiz_id': quiz.id})
-        submit_response = api_client.post(submit_url, {
-            'answers': {
-                str(question.id): correct_answer.id
-            }
-        })
+        submit_response = api_client.post(
+            submit_url,
+            {
+                'answers': {
+                    str(question.id): correct_answer.id
+                }
+            },
+            format='json'  # Add this line to specify JSON format
+        )
         
         assert submit_response.status_code == 200
         assert submit_response.data['score'] == 100

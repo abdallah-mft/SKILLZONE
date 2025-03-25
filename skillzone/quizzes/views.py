@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Quiz, QuizAttempt, Question, Answer
+from .models import Quiz, QuizAttempt, Question, Answer, QuizAchievement, QuizProgress
 from .serializers import (
     QuizListSerializer, 
     QuizDetailSerializer, 
@@ -31,8 +31,19 @@ def quiz_detail(request, quiz_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def start_quiz(request, quiz_id):
-    """Start a new quiz attempt"""
+    """Start a new quiz attempt with randomization"""
     quiz = get_object_or_404(Quiz, id=quiz_id)
+    
+    # Check max attempts
+    if quiz.max_attempts > 0:
+        attempt_count = QuizAttempt.objects.filter(
+            quiz=quiz,
+            user=request.user.profile
+        ).count()
+        if attempt_count >= quiz.max_attempts:
+            return Response({
+                "error": "Maximum attempts reached"
+            }, status=status.HTTP_400_BAD_REQUEST)
     
     # Check for existing incomplete attempt
     existing_attempt = QuizAttempt.objects.filter(
@@ -42,19 +53,17 @@ def start_quiz(request, quiz_id):
     ).first()
     
     if existing_attempt:
-        # Check if time limit exceeded
         time_elapsed = timezone.now() - existing_attempt.started_at
         if time_elapsed.total_seconds() > quiz.time_limit:
             existing_attempt.is_passed = False
             existing_attempt.completed_at = timezone.now()
             existing_attempt.save()
         else:
-            # Return existing attempt with remaining time
             remaining_time = quiz.time_limit - int(time_elapsed.total_seconds())
             return Response({
                 'attempt_id': existing_attempt.id,
                 'remaining_time': remaining_time,
-                'quiz': QuizDetailSerializer(quiz).data
+                'quiz': QuizDetailSerializer(quiz, context={'randomize': quiz.is_randomized}).data
             })
     
     # Create new attempt
@@ -66,13 +75,13 @@ def start_quiz(request, quiz_id):
     return Response({
         'attempt_id': attempt.id,
         'remaining_time': quiz.time_limit,
-        'quiz': QuizDetailSerializer(quiz).data
+        'quiz': QuizDetailSerializer(quiz, context={'randomize': quiz.is_randomized}).data
     })
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def submit_quiz(request, quiz_id):
-    """Submit quiz answers and calculate score"""
+    """Submit quiz answers and calculate score with achievements"""
     quiz = get_object_or_404(Quiz, id=quiz_id)
     attempt = get_object_or_404(
         QuizAttempt,
@@ -94,7 +103,7 @@ def submit_quiz(request, quiz_id):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     # Process answers
-    answers = request.data.get('answers', {})  # Format: {question_id: answer_id}
+    answers = request.data.get('answers', {})
     total_points = 0
     max_points = 0
     
@@ -117,16 +126,34 @@ def submit_quiz(request, quiz_id):
     attempt.completed_at = timezone.now()
     attempt.save()
     
-    # Award points if passed
-    if attempt.is_passed:
+    # Update QuizProgress
+    progress, _ = QuizProgress.objects.get_or_create(
+        user=request.user.profile,
+        quiz=quiz
+    )
+    progress.attempts_count += 1
+    progress.total_time_spent += int(time_elapsed.total_seconds())
+    progress.last_attempt_date = timezone.now()
+    if percentage_score > progress.best_score:
+        progress.best_score = percentage_score
+    progress.completed = attempt.is_passed
+    progress.save()
+    
+    # Award points and achievements
+    points_earned = quiz.points_reward if attempt.is_passed else 0
+    if points_earned > 0:
         profile = request.user.profile
-        profile.points += quiz.points_reward
+        profile.points += points_earned
         profile.save()
+    
+    achievements, bonus_points = award_achievements(attempt)
     
     return Response({
         'score': percentage_score,
         'is_passed': attempt.is_passed,
-        'points_earned': quiz.points_reward if attempt.is_passed else 0,
+        'points_earned': points_earned,
+        'bonus_points': bonus_points,
+        'achievements': achievements,
         'attempt': QuizAttemptSerializer(attempt).data
     })
 
@@ -173,3 +200,78 @@ def list_urls(request):
     return Response({
         'available_urls': available_paths
     })
+
+def award_achievements(attempt):
+    """Award achievements based on quiz performance"""
+    quiz = attempt.quiz
+    user = attempt.user
+    
+    achievements = []
+    
+    # Perfect Score Achievement
+    if attempt.score == 100:
+        achievement, created = QuizAchievement.objects.get_or_create(
+            user=user,
+            quiz=quiz,
+            achievement_type='PERFECT',
+            defaults={'bonus_points': 50}
+        )
+        if created:
+            achievements.append('PERFECT')
+    
+    # Speed Demon Achievement (completed in less than 50% of time limit)
+    time_taken = (attempt.completed_at - attempt.started_at).total_seconds()
+    if time_taken < (quiz.time_limit * 0.5):
+        achievement, created = QuizAchievement.objects.get_or_create(
+            user=user,
+            quiz=quiz,
+            achievement_type='FAST',
+            defaults={'bonus_points': 30}
+        )
+        if created:
+            achievements.append('FAST')
+    
+    # Winning Streak (3 or more consecutive passes)
+    recent_attempts = QuizAttempt.objects.filter(
+        user=user,
+        quiz=quiz,
+        is_passed=True,
+        completed_at__isnull=False
+    ).order_by('-completed_at')[:3]
+    
+    if recent_attempts.count() >= 3:
+        achievement, created = QuizAchievement.objects.get_or_create(
+            user=user,
+            quiz=quiz,
+            achievement_type='STREAK',
+            defaults={'bonus_points': 40}
+        )
+        if created:
+            achievements.append('STREAK')
+    
+    # Quiz Master (achieved all other achievements)
+    if QuizAchievement.objects.filter(user=user, quiz=quiz).count() >= 3:
+        achievement, created = QuizAchievement.objects.get_or_create(
+            user=user,
+            quiz=quiz,
+            achievement_type='MASTER',
+            defaults={'bonus_points': 100}
+        )
+        if created:
+            achievements.append('MASTER')
+    
+    # Award bonus points
+    total_bonus = 0
+    for achievement_type in achievements:
+        achievement = QuizAchievement.objects.get(
+            user=user,
+            quiz=quiz,
+            achievement_type=achievement_type
+        )
+        total_bonus += achievement.bonus_points
+    
+    if total_bonus > 0:
+        user.points += total_bonus
+        user.save()
+    
+    return achievements, total_bonus

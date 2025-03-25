@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Quiz, Question, Answer, QuizAttempt
+from random import shuffle
 
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,6 +30,17 @@ class QuizDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quiz
         fields = ['id', 'title', 'description', 'time_limit', 'points_reward', 'questions']
+    
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        
+        # Randomize questions if specified
+        if self.context.get('randomize', False):
+            questions = data['questions']
+            shuffle(questions)
+            data['questions'] = questions
+        
+        return data
 
 class QuizAttemptSerializer(serializers.ModelSerializer):
     class Meta:

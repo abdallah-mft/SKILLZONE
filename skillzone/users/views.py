@@ -9,7 +9,9 @@ from django.shortcuts import get_object_or_404
 from django.db.utils import IntegrityError
 from .models import Profile
 from .serializers import UserSerializer, ProfileSerializer
-from rest_framework_simplejwt.tokens import RefreshToken  
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.core.validators import validate_email, ValidationError
+from django.db import transaction
 
 
 @api_view(['GET'])
@@ -20,71 +22,87 @@ def index(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    """Registers a new user with email, username, password, and full name"""
-    email = request.data.get('email')
-    username = request.data.get('username')
-    password = request.data.get('password')
-    first_name = request.data.get('first_name', '')
-    last_name = request.data.get('last_name', '')
-
-    # Validation
-    if not all([email, username, password]):
-        return Response({
-            "error": "Email, username, and password are required"
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    # Check if email already exists
-    if User.objects.filter(email=email).exists():
-        return Response({
-            "error": "Email already registered"
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    # Check if username already exists
-    if User.objects.filter(username=username).exists():
-        return Response({
-            "error": "Username already exists"
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    # Validate email format
+    """Registers a new user with enhanced validation"""
     try:
-        from django.core.validators import validate_email
-        validate_email(email)
-    except:
-        return Response({
-            "error": "Invalid email format"
-        }, status=status.HTTP_400_BAD_REQUEST)
+        email = request.data.get('email', '').lower().strip()
+        username = request.data.get('username', '').strip()
+        password = request.data.get('password')
+        first_name = request.data.get('first_name', '').strip()
+        last_name = request.data.get('last_name', '').strip()
 
-    try:
-        # Create user only after all validations pass
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password,
-            first_name=first_name,
-            last_name=last_name
-        )
+        # Enhanced validation
+        errors = {}
         
-        # Don't create profile here - it's created by the signal
-        # Get the profile that was created by the signal
-        profile = user.profile
-        
-        # Generate token
-        token, _ = Token.objects.get_or_create(user=user)
-        
-        serializer = ProfileSerializer(profile)
-        return Response({
-            "message": "User registered successfully",
-            "token": token.key,
-            "user": serializer.data
-        }, status=status.HTTP_201_CREATED)
+        # Email validation
+        if not email:
+            errors['email'] = 'Email is required'
+        elif User.objects.filter(email=email).exists():
+            errors['email'] = 'Email already registered'
+        else:
+            try:
+                validate_email(email)
+            except ValidationError:
+                errors['email'] = 'Invalid email format'
+
+        # Username validation
+        if not username:
+            errors['username'] = 'Username is required'
+        elif len(username) < 3:
+            errors['username'] = 'Username must be at least 3 characters'
+        elif User.objects.filter(username=username).exists():
+            errors['username'] = 'Username already exists'
+
+        # Password validation
+        if not password:
+            errors['password'] = 'Password is required'
+        elif len(password) < 8:
+            errors['password'] = 'Password must be at least 8 characters'
+        elif not any(c.isdigit() for c in password):
+            errors['password'] = 'Password must contain at least one number'
+        elif not any(c.isupper() for c in password):
+            errors['password'] = 'Password must contain at least one uppercase letter'
+
+        if errors:
+            return Response({
+                'success': False,
+                'message': 'Validation failed',
+                'errors': errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create user with transaction
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+            
+            # Profile is created by signal
+            profile = user.profile
+            
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                'success': True,
+                'message': 'Registration successful',
+                'data': {
+                    'tokens': {
+                        'access': str(refresh.access_token),
+                        'refresh': str(refresh)
+                    },
+                    'user': ProfileSerializer(profile).data
+                }
+            }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
-        # If any error occurs during user creation, delete the user
-        if 'user' in locals():
-            user.delete()
         return Response({
-            "error": str(e)
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'success': False,
+            'message': str(e),
+            'data': None
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -239,4 +257,128 @@ def logout(request):
             "success": False,
             "message": str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    """Update user profile information"""
+    try:
+        user = request.user
+        profile = user.profile
+        
+        # Update basic user info
+        if 'first_name' in request.data:
+            user.first_name = request.data['first_name']
+        if 'last_name' in request.data:
+            user.last_name = request.data['last_name']
+            
+        # Update email with validation
+        if 'email' in request.data:
+            new_email = request.data['email'].lower().strip()
+            if new_email != user.email:
+                if User.objects.filter(email=new_email).exists():
+                    return Response({
+                        'success': False,
+                        'message': 'Email already exists',
+                        'data': None
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                try:
+                    validate_email(new_email)
+                    user.email = new_email
+                except ValidationError:
+                    return Response({
+                        'success': False,
+                        'message': 'Invalid email format',
+                        'data': None
+                    }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Update profile fields
+        if 'bio' in request.data:
+            profile.bio = request.data['bio']
+            
+        if 'notification_preferences' in request.data:
+            profile.notification_preferences.update(
+                request.data['notification_preferences']
+            )
+            
+        # Handle avatar upload
+        if 'avatar' in request.FILES:
+            if profile.avatar:
+                profile.avatar.delete()  # Delete old avatar
+            profile.avatar = request.FILES['avatar']
+        
+        # Save changes
+        with transaction.atomic():
+            user.save()
+            profile.save()
+        
+        return Response({
+            'success': True,
+            'message': 'Profile updated successfully',
+            'data': ProfileSerializer(profile).data
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': str(e),
+            'data': None
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """Change user password with validation"""
+    try:
+        user = request.user
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+        
+        if not current_password or not new_password:
+            return Response({
+                'success': False,
+                'message': 'Both current and new password are required',
+                'data': None
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Verify current password
+        if not user.check_password(current_password):
+            return Response({
+                'success': False,
+                'message': 'Current password is incorrect',
+                'data': None
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Validate new password
+        if len(new_password) < 8:
+            return Response({
+                'success': False,
+                'message': 'Password must be at least 8 characters',
+                'data': None
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Update password
+        user.set_password(new_password)
+        user.save()
+        
+        # Generate new tokens
+        refresh = RefreshToken.for_user(user)
+        
+        return Response({
+            'success': True,
+            'message': 'Password changed successfully',
+            'data': {
+                'tokens': {
+                    'access': str(refresh.access_token),
+                    'refresh': str(refresh)
+                }
+            }
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': str(e),
+            'data': None
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         

@@ -11,6 +11,19 @@ class Course(models.Model):
     description = models.TextField()
     course_type = models.CharField(max_length=4, choices=COURSE_TYPES)
     points_required = models.IntegerField(default=0)
+    prerequisites = models.ManyToManyField('self', blank=True, symmetrical=False)
+    category = models.CharField(max_length=50, blank=True)
+    tags = models.CharField(max_length=255, blank=True)
+    difficulty_level = models.CharField(
+        max_length=20,
+        choices=[
+            ('BEGINNER', 'Beginner'),
+            ('INTERMEDIATE', 'Intermediate'),
+            ('ADVANCED', 'Advanced')
+        ],
+        default='BEGINNER'
+    )
+    estimated_duration = models.IntegerField(help_text="Estimated duration in minutes", default=0)
 
     def clean(self):
         if self.course_type == 'HARD' and self.points_required <= 0:
@@ -57,3 +70,24 @@ class UnlockedCourse(models.Model):
 
     def __str__(self):
         return f"{self.user.user.username} - {self.course.title}"
+
+class CourseProgress(models.Model):
+    user = models.ForeignKey('users.Profile', on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    started_at = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
+    completed_lessons = models.ManyToManyField(Lesson)
+    completed_quizzes = models.ManyToManyField('quizzes.Quiz')
+    
+    @property
+    def completion_percentage(self):
+        total_items = self.course.lessons.count() + self.course.quizzes.count()
+        completed_items = self.completed_lessons.count() + self.completed_quizzes.count()
+        return (completed_items / total_items * 100) if total_items > 0 else 0
+    
+    @property
+    def is_completed(self):
+        return self.completion_percentage == 100
+    
+    class Meta:
+        unique_together = ['user', 'course']

@@ -151,3 +151,53 @@ INFO 2025-03-25 05:54:02,274 middleware Response 200
 INFO 2025-03-25 05:54:02,871 middleware Request GET /api/v1/quizzes/quizzes/1/statistics/ from 127.0.0.1
 INFO 2025-03-25 05:54:02,879 middleware Response 200
 INFO 2025-03-25 05:54:43,286 autoreload Watching for file changes with StatReloader
+INFO 2025-03-25 05:54:56,064 middleware Request GET /admin/courses/course/ from 127.0.0.1
+INFO 2025-03-25 05:54:56,162 middleware Response 200
+INFO 2025-03-25 05:54:56,215 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:54:56,222 middleware Response 200
+INFO 2025-03-25 05:55:02,780 middleware Request GET /admin/auth/user/ from 127.0.0.1
+INFO 2025-03-25 05:55:02,824 middleware Response 200
+INFO 2025-03-25 05:55:02,878 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:55:02,891 middleware Response 200
+INFO 2025-03-25 05:55:06,108 middleware Request GET /admin/courses/course/ from 127.0.0.1
+INFO 2025-03-25 05:55:06,130 middleware Response 200
+INFO 2025-03-25 05:55:06,191 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:55:06,221 middleware Response 200
+INFO 2025-03-25 05:55:09,537 middleware Request GET /admin/quizzes/question/ from 127.0.0.1
+INFO 2025-03-25 05:55:09,565 middleware Response 200
+INFO 2025-03-25 05:55:09,626 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:55:09,632 middleware Response 200
+INFO 2025-03-25 05:55:14,357 middleware Request GET /admin/quizzes/quiz/ from 127.0.0.1
+INFO 2025-03-25 05:55:14,399 middleware Response 200
+INFO 2025-03-25 05:55:14,467 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:55:14,474 middleware Response 200
+INFO 2025-03-25 05:55:16,869 middleware Request GET /admin/quizzes/quizattempt/ from 127.0.0.1
+INFO 2025-03-25 05:55:16,903 middleware Response 200
+INFO 2025-03-25 05:55:16,972 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:55:16,982 middleware Response 200
+INFO 2025-03-25 05:55:19,587 middleware Request GET /admin/quizzes/question/ from 127.0.0.1
+INFO 2025-03-25 05:55:19,613 middleware Response 200
+INFO 2025-03-25 05:55:19,668 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:55:19,676 middleware Response 200
+INFO 2025-03-25 05:55:22,256 middleware Request GET /admin/quizzes/quiz/ from 127.0.0.1
+INFO 2025-03-25 05:55:22,304 middleware Response 200
+INFO 2025-03-25 05:55:22,369 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:55:22,385 middleware Response 200
+INFO 2025-03-25 05:55:36,299 middleware Request GET /admin/token_blacklist/blacklistedtoken/ from 127.0.0.1
+INFO 2025-03-25 05:55:36,326 middleware Response 200
+INFO 2025-03-25 05:55:36,387 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:55:36,397 middleware Response 200
+INFO 2025-03-25 05:55:39,434 middleware Request GET /admin/quizzes/quiz/ from 127.0.0.1
+INFO 2025-03-25 05:55:39,497 middleware Response 200
+INFO 2025-03-25 05:55:39,555 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:55:39,569 middleware Response 200
+INFO 2025-03-25 05:55:53,470 middleware Request GET /admin/quizzes/quiz/ from 127.0.0.1
+INFO 2025-03-25 05:55:53,507 middleware Response 200
+INFO 2025-03-25 05:55:53,564 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:55:53,573 middleware Response 200
+INFO 2025-03-25 05:55:57,956 middleware Request GET /admin/quizzes/quiz/1/change/ from 127.0.0.1
+INFO 2025-03-25 05:55:58,091 middleware Response 200
+INFO 2025-03-25 05:55:58,162 middleware Request GET /admin/jsi18n/ from 127.0.0.1
+INFO 2025-03-25 05:55:58,189 middleware Response 200
+INFO 2025-03-25 05:56:03,207 middleware Request GET /admin/quizzes/quiz/ from 127.0.0.1
+INFO 2025-03-25 05:56:03,242 middleware Response 200

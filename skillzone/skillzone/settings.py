@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'courses',
     'quizzes.apps.QuizzesConfig',
     'corsheaders',
+    'achievements.apps.AchievementsConfig',
 ]
 
 MIDDLEWARE = [

@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.db.utils import IntegrityError
 from .models import Profile
 from .serializers import UserSerializer, ProfileSerializer
-from rest_framework_simplejwt.tokens import RefreshToken  # Add this import
+from rest_framework_simplejwt.tokens import RefreshToken  
 
 
 @api_view(['GET'])
@@ -239,3 +239,4 @@ def logout(request):
             "success": False,
             "message": str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
+        

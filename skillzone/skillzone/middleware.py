@@ -1,5 +1,5 @@
 import logging
-import json
+import traceback
 from django.http import JsonResponse
 from rest_framework import status
 from django.core.exceptions import ValidationError
@@ -22,6 +22,9 @@ class FlutterErrorHandlerMiddleware:
             return self.process_exception(request, e)
 
     def process_exception(self, request, exception):
+        # Log full traceback
+        logger.error(f"Detailed error traceback:\n{traceback.format_exc()}")
+        
         if isinstance(exception, ValidationError):
             status_code = status.HTTP_400_BAD_REQUEST
         elif isinstance(exception, APIException):

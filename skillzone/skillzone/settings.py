@@ -31,7 +31,12 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'skillzone-zzpc.onrender.com']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'skillzone-2ge1.onrender.com',
+    '.onrender.com',  # Allows all subdomains of onrender.com
+]
 
 # Add this for static files
 STATIC_URL = '/static/'

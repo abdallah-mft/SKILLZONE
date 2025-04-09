@@ -7,6 +7,8 @@ class Achievement(models.Model):
         ('BADGE', 'Badge'),
         ('CERTIFICATE', 'Certificate'),
         ('MILESTONE', 'Milestone'),
+        ('STREAK', 'Learning Streak'),
+        ('SOCIAL', 'Social Achievement')
     )
     
     title = models.CharField(max_length=100)
@@ -21,6 +23,17 @@ class Achievement(models.Model):
         help_text="Criteria to unlock achievement"
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    level = models.IntegerField(default=1)
+    rarity = models.CharField(
+        max_length=20,
+        choices=[
+            ('COMMON', 'Common'),
+            ('RARE', 'Rare'),
+            ('EPIC', 'Epic'),
+            ('LEGENDARY', 'Legendary')
+        ],
+        default='COMMON'
+    )
 
     def __str__(self):
         return f"{self.get_type_display()}: {self.title}"

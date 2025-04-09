@@ -12,7 +12,22 @@ from .serializers import UserSerializer, ProfileSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.validators import validate_email, ValidationError
 from django.db import transaction
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.urls import reverse
+from django.conf import settings
+from django.utils import timezone
+from .utils import handle_avatar_upload
+import os
+from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_decode
+from django.http import JsonResponse
 
+User = get_user_model()
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -22,7 +37,7 @@ def index(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    """Registers a new user with enhanced validation"""
+    """Registers a new user with enhanced validation and email verification"""
     try:
         email = request.data.get('email', '').lower().strip()
         username = request.data.get('username', '').strip()
@@ -76,18 +91,31 @@ def register(request):
                 email=email,
                 password=password,
                 first_name=first_name,
-                last_name=last_name
+                last_name=last_name,
+                is_active=True  # User can login but email needs verification
             )
             
-            # Profile is created by signal
             profile = user.profile
+            verification_token = profile.generate_verification_token()
             
-            # Generate JWT tokens
+            # Send verification email
+            verification_url = request.build_absolute_uri(
+                reverse('verify-email', args=[verification_token])
+            )
+            
+            send_mail(
+                'Verify your email address',
+                f'Click here to verify your email: {verification_url}',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            
             refresh = RefreshToken.for_user(user)
             
             return Response({
                 'success': True,
-                'message': 'Registration successful',
+                'message': 'Registration successful. Please check your email to verify your account.',
                 'data': {
                     'tokens': {
                         'access': str(refresh.access_token),
@@ -381,4 +409,195 @@ def change_password(request):
             'message': str(e),
             'data': None
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_request(request):
+    """Handle password reset request"""
+    email = request.data.get('email', '').lower().strip()
+    
+    if not email:
+        return Response({
+            'success': False,
+            'message': 'Email is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        user = User.objects.get(email=email)
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        
+        reset_url = request.build_absolute_uri(
+            reverse('password-reset-confirm', args=[uid, token])
+        )
+        
+        send_mail(
+            'Password Reset Request',
+            f'Click here to reset your password: {reset_url}',
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Password reset email sent'
+        })
+        
+    except User.DoesNotExist:
+        return Response({
+            'success': True,  # Don't reveal if email exists
+            'message': 'If an account exists with this email, a password reset link has been sent.'
+        })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def deactivate_account(request):
+    """Deactivate user account"""
+    try:
+        user = request.user
+        profile = user.profile
+        
+        # Require password confirmation
+        password = request.data.get('password')
+        if not user.check_password(password):
+            return Response({
+                'success': False,
+                'message': 'Invalid password'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        with transaction.atomic():
+            profile.account_deactivated = True
+            profile.deactivation_date = timezone.now()
+            profile.save()
+            
+            user.is_active = False
+            user.save()
+            
+            # Blacklist all refresh tokens
+            RefreshToken.for_user(user).blacklist()
+            
+        return Response({
+            'success': True,
+            'message': 'Account deactivated successfully'
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_avatar(request):
+    """Update user's profile avatar"""
+    try:
+        if 'avatar' not in request.FILES:
+            return Response({
+                'success': False,
+                'message': 'No image file provided'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        image_file = request.FILES['avatar']
+        profile = request.user.profile
+        
+        # Delete old avatar if exists
+        if profile.avatar:
+            if os.path.exists(profile.avatar.path):
+                os.remove(profile.avatar.path)
+        
+        # Process and save new avatar
+        avatar_path = handle_avatar_upload(image_file, request.user.id)
+        profile.avatar = avatar_path
+        profile.save()
+        
+        return Response({
+            'success': True,
+            'message': 'Avatar updated successfully',
+            'data': {
+                'avatar_url': request.build_absolute_uri(profile.avatar.url)
+            }
+        })
+        
+    except ValueError as e:
+        return Response({
+            'success': False,
+            'message': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': 'Error updating avatar'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def verify_email(request, token):
+    """
+    Verify user's email using the verification token
+    """
+    try:
+        profile = get_object_or_404(Profile, email_verification_token=token)
+        
+        if profile.email_verified:
+            return JsonResponse({
+                'success': False,
+                'message': 'Email already verified'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        profile.verify_email()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Email verified successfully'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid or expired verification token'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_confirm(request, uidb64, token):
+    """
+    Confirm password reset and set new password
+    """
+    try:
+        # Decode the user id
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+        
+        # Verify the token
+        if not default_token_generator.check_token(user, token):
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid or expired password reset token'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the new password from request data
+        new_password = request.data.get('new_password')
+        if not new_password:
+            return JsonResponse({
+                'success': False,
+                'message': 'New password is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Set the new password
+        user.set_password(new_password)
+        user.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Password has been reset successfully'
+        })
+
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid password reset link'
+        }, status=status.HTTP_400_BAD_REQUEST)
         

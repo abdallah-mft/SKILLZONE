@@ -201,3 +201,56 @@ INFO 2025-03-25 05:55:58,162 middleware Request GET /admin/jsi18n/ from 127.0.0.
 INFO 2025-03-25 05:55:58,189 middleware Response 200
 INFO 2025-03-25 05:56:03,207 middleware Request GET /admin/quizzes/quiz/ from 127.0.0.1
 INFO 2025-03-25 05:56:03,242 middleware Response 200
+INFO 2025-04-09 09:48:46,871 autoreload Watching for file changes with StatReloader
+INFO 2025-04-09 09:50:43,236 autoreload Watching for file changes with StatReloader
+INFO 2025-04-09 09:54:16,766 middleware Request POST /api/users/register/ from 127.0.0.1
+INFO 2025-04-09 09:54:16,801 middleware Response 404
+WARNING 2025-04-09 09:54:16,802 log Not Found: /api/users/register/
+INFO 2025-04-09 09:54:36,428 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+INFO 2025-04-09 09:54:38,234 middleware Response 201
+INFO 2025-04-09 10:00:23,943 middleware Request POST /api/v1/users/login/ from 127.0.0.1
+INFO 2025-04-09 10:00:25,269 middleware Response 200
+INFO 2025-04-09 10:02:21,078 middleware Request POST /api/v1/users/update-points/ from 127.0.0.1
+INFO 2025-04-09 10:02:21,080 middleware Response 401
+WARNING 2025-04-09 10:02:21,080 log Unauthorized: /api/v1/users/update-points/
+INFO 2025-04-09 10:03:23,528 middleware Request POST /api/v1/users/update-points/ from 127.0.0.1
+INFO 2025-04-09 10:03:23,530 middleware Response 401
+WARNING 2025-04-09 10:03:23,530 log Unauthorized: /api/v1/users/update-points/
+INFO 2025-04-09 10:04:33,105 middleware Request POST /api/v1/users/update-points/ from 127.0.0.1
+INFO 2025-04-09 10:04:33,249 middleware Response 200
+INFO 2025-04-09 10:04:46,618 middleware Request POST /api/v1/users/update-points/ from 127.0.0.1
+INFO 2025-04-09 10:04:46,733 middleware Response 200
+INFO 2025-04-09 10:06:23,240 middleware Request POST /api/v1/users/logout/ from 127.0.0.1
+INFO 2025-04-09 10:06:23,334 middleware Response 400
+WARNING 2025-04-09 10:06:23,335 log Bad Request: /api/v1/users/logout/
+INFO 2025-04-09 10:06:31,567 middleware Request POST /api/v1/users/logout/ from 127.0.0.1
+INFO 2025-04-09 10:06:31,787 middleware Response 200
+INFO 2025-04-09 10:07:50,534 middleware Request POST /api/v1/users/update-device-token/ from 127.0.0.1
+INFO 2025-04-09 10:07:50,648 middleware Response 200
+INFO 2025-04-09 10:08:15,016 middleware Request POST /api/v1/users/update-device-token/ from 127.0.0.1
+INFO 2025-04-09 10:08:15,222 middleware Response 200
+INFO 2025-04-09 10:52:48,455 middleware Request POST /api/v1/quizzes/quizzes/4/start/ from 127.0.0.1
+INFO 2025-04-09 10:52:48,463 middleware Response 200
+INFO 2025-04-09 10:52:49,169 middleware Request POST /api/v1/quizzes/quizzes/5/start/ from 127.0.0.1
+INFO 2025-04-09 10:52:49,177 middleware Response 200
+INFO 2025-04-09 10:52:49,178 middleware Request POST /api/v1/quizzes/quizzes/5/submit/ from 127.0.0.1
+INFO 2025-04-09 10:52:49,230 middleware Response 200
+INFO 2025-04-09 10:52:49,930 middleware Request GET /api/v1/quizzes/quizzes/6/statistics/ from 127.0.0.1
+INFO 2025-04-09 10:52:49,935 middleware Response 200
+INFO 2025-04-09 10:52:49,943 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+INFO 2025-04-09 10:52:50,733 middleware Response 201
+INFO 2025-04-09 10:52:51,432 middleware Request POST /api/v1/users/login/ from 127.0.0.1
+INFO 2025-04-09 10:52:52,228 middleware Response 200
+INFO 2025-04-09 10:52:52,951 middleware Request POST /api/v1/users/password-reset/ from 127.0.0.1
+INFO 2025-04-09 10:52:52,955 middleware Response 200
+INFO 2025-04-09 10:52:53,656 middleware Request GET /api/v1/users/verify-email/test-token/ from 127.0.0.1
+INFO 2025-04-09 10:52:53,658 middleware Response 400
+WARNING 2025-04-09 10:52:53,658 log Bad Request: /api/v1/users/verify-email/test-token/
+INFO 2025-04-09 10:52:53,665 middleware Request GET /api/v1/users/ from 127.0.0.1
+INFO 2025-04-09 10:52:53,666 middleware Response 200
+INFO 2025-04-09 10:52:53,671 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+INFO 2025-04-09 10:52:54,392 middleware Response 201
+INFO 2025-04-09 10:52:55,091 middleware Request POST /api/v1/users/password-reset/ from 127.0.0.1
+INFO 2025-04-09 10:52:55,095 middleware Response 200
+INFO 2025-04-09 11:13:53,135 autoreload Watching for file changes with StatReloader
+INFO 2025-04-09 11:19:09,862 autoreload Watching for file changes with StatReloader

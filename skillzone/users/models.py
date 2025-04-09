@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -12,7 +13,22 @@ class Profile(models.Model):
     last_active = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
     notification_preferences = models.JSONField(default=dict)
-    
+    # New fields
+    email_verified = models.BooleanField(default=False)
+    email_verification_token = models.CharField(max_length=100, blank=True)
+    account_deactivated = models.BooleanField(default=False)
+    deactivation_date = models.DateTimeField(null=True, blank=True)
+
+    def generate_verification_token(self):
+        self.email_verification_token = get_random_string(64)
+        self.save(update_fields=['email_verification_token'])
+        return self.email_verification_token
+
+    def verify_email(self):
+        self.email_verified = True
+        self.email_verification_token = ''
+        self.save(update_fields=['email_verified', 'email_verification_token'])
+
     class Meta:
         indexes = [
             models.Index(fields=['user']),

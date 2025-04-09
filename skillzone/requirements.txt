@@ -1,2 +1,10 @@
-pytest
-pytest-django
+django
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
+psycopg2-binary
+python-dotenv
+Pillow
+redis
+gunicorn
+whitenoise

@@ -1,0 +1,321 @@
+INFO 2025-04-09 10:38:42,971 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+ERROR 2025-04-09 10:38:43,005 log Internal Server Error: /api/v1/users/register/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 97, in __call__
+    if not settings.DEBUG:
+           ^^^^^^^^
+NameError: name 'settings' is not defined
+INFO 2025-04-09 10:38:43,026 middleware Response 500
+INFO 2025-04-09 10:38:44,198 middleware Request POST /api/v1/users/login/ from 127.0.0.1
+ERROR 2025-04-09 10:38:44,208 log Internal Server Error: /api/v1/users/login/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 66, in __call__
+    attempts = cache.get(key, 0)
+               ^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 187, in get
+    return self._cache.get(key, default)
+           ^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 172, in _cache
+    return self._class(self._servers, **self._options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 39, in __init__
+    import redis
+ModuleNotFoundError: No module named 'redis'
+INFO 2025-04-09 10:38:44,241 middleware Response 500
+INFO 2025-04-09 10:38:45,125 middleware Request POST /api/v1/users/profile/avatar/ from 127.0.0.1
+ERROR 2025-04-09 10:38:45,134 log Internal Server Error: /api/v1/users/profile/avatar/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 97, in __call__
+    if not settings.DEBUG:
+           ^^^^^^^^
+NameError: name 'settings' is not defined
+INFO 2025-04-09 10:38:45,137 middleware Response 500
+INFO 2025-04-09 10:38:45,920 middleware Request POST /api/v1/users/profile/avatar/ from 127.0.0.1
+ERROR 2025-04-09 10:38:46,056 log Internal Server Error: /api/v1/users/profile/avatar/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 97, in __call__
+    if not settings.DEBUG:
+           ^^^^^^^^
+NameError: name 'settings' is not defined
+INFO 2025-04-09 10:38:46,059 middleware Response 500
+INFO 2025-04-09 10:38:47,681 middleware Request GET /api/v1/users/login/ from 127.0.0.1
+ERROR 2025-04-09 10:38:47,682 log Internal Server Error: /api/v1/users/login/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 66, in __call__
+    attempts = cache.get(key, 0)
+               ^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 187, in get
+    return self._cache.get(key, default)
+           ^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 172, in _cache
+    return self._class(self._servers, **self._options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 39, in __init__
+    import redis
+ModuleNotFoundError: No module named 'redis'
+INFO 2025-04-09 10:38:47,683 middleware Response 500
+INFO 2025-04-09 10:38:47,791 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+ERROR 2025-04-09 10:38:47,796 log Internal Server Error: /api/v1/users/register/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 97, in __call__
+    if not settings.DEBUG:
+           ^^^^^^^^
+NameError: name 'settings' is not defined
+INFO 2025-04-09 10:38:47,798 middleware Response 500
+INFO 2025-04-09 10:40:39,420 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+ERROR 2025-04-09 10:40:39,450 log Internal Server Error: /api/v1/users/register/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 97, in __call__
+    if not settings.DEBUG:
+           ^^^^^^^^
+NameError: name 'settings' is not defined
+INFO 2025-04-09 10:40:39,453 middleware Response 500
+INFO 2025-04-09 10:40:40,601 middleware Request POST /api/v1/users/login/ from 127.0.0.1
+ERROR 2025-04-09 10:40:40,602 log Internal Server Error: /api/v1/users/login/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 66, in __call__
+    attempts = cache.get(key, 0)
+               ^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 187, in get
+    return self._cache.get(key, default)
+           ^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 172, in _cache
+    return self._class(self._servers, **self._options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 39, in __init__
+    import redis
+ModuleNotFoundError: No module named 'redis'
+INFO 2025-04-09 10:40:40,604 middleware Response 500
+INFO 2025-04-09 10:40:41,435 middleware Request POST /api/v1/users/profile/avatar/ from 127.0.0.1
+ERROR 2025-04-09 10:40:41,440 log Internal Server Error: /api/v1/users/profile/avatar/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 97, in __call__
+    if not settings.DEBUG:
+           ^^^^^^^^
+NameError: name 'settings' is not defined
+INFO 2025-04-09 10:40:41,443 middleware Response 500
+INFO 2025-04-09 10:40:42,234 middleware Request POST /api/v1/users/profile/avatar/ from 127.0.0.1
+ERROR 2025-04-09 10:40:42,306 log Internal Server Error: /api/v1/users/profile/avatar/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 97, in __call__
+    if not settings.DEBUG:
+           ^^^^^^^^
+NameError: name 'settings' is not defined
+INFO 2025-04-09 10:40:42,309 middleware Response 500
+INFO 2025-04-09 10:40:43,947 middleware Request GET /api/v1/users/login/ from 127.0.0.1
+ERROR 2025-04-09 10:40:43,949 log Internal Server Error: /api/v1/users/login/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 66, in __call__
+    attempts = cache.get(key, 0)
+               ^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 187, in get
+    return self._cache.get(key, default)
+           ^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 172, in _cache
+    return self._class(self._servers, **self._options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 39, in __init__
+    import redis
+ModuleNotFoundError: No module named 'redis'
+INFO 2025-04-09 10:40:43,950 middleware Response 500
+INFO 2025-04-09 10:40:44,068 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+ERROR 2025-04-09 10:40:44,072 log Internal Server Error: /api/v1/users/register/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 97, in __call__
+    if not settings.DEBUG:
+           ^^^^^^^^
+NameError: name 'settings' is not defined
+INFO 2025-04-09 10:40:44,075 middleware Response 500
+INFO 2025-04-09 10:43:29,571 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+ERROR 2025-04-09 10:43:29,600 log Internal Server Error: /api/v1/users/register/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 97, in __call__
+    if not settings.DEBUG:
+           ^^^^^^^^
+NameError: name 'settings' is not defined
+INFO 2025-04-09 10:43:29,603 middleware Response 500
+INFO 2025-04-09 10:43:33,011 middleware Request GET /api/v1/users/ from 127.0.0.1
+ERROR 2025-04-09 10:43:33,012 log Internal Server Error: /api/v1/users/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 97, in __call__
+    if not settings.DEBUG:
+           ^^^^^^^^
+NameError: name 'settings' is not defined
+INFO 2025-04-09 10:43:33,015 middleware Response 500
+INFO 2025-04-09 10:43:33,108 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+ERROR 2025-04-09 10:43:33,110 log Internal Server Error: /api/v1/users/register/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 97, in __call__
+    if not settings.DEBUG:
+           ^^^^^^^^
+NameError: name 'settings' is not defined
+INFO 2025-04-09 10:43:33,113 middleware Response 500
+INFO 2025-04-09 10:46:14,574 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+INFO 2025-04-09 10:46:14,581 middleware Response 400
+WARNING 2025-04-09 10:46:14,581 log Bad Request: /api/v1/users/register/
+INFO 2025-04-09 10:46:15,608 middleware Request POST /api/v1/users/login/ from 127.0.0.1
+ERROR 2025-04-09 10:46:17,757 log Internal Server Error: /api/v1/users/login/
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\redis\connection.py", line 357, in connect
+    sock = self.retry.call_with_retry(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\redis\retry.py", line 62, in call_with_retry
+    return do()
+           ^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\redis\connection.py", line 358, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\redis\connection.py", line 730, in _connect
+    raise err
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\redis\connection.py", line 718, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\Desktop\skillzone\skillzone\skillzone\middleware.py", line 67, in __call__
+    attempts = cache.get(key, 0)
+               ^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 187, in get
+    return self._cache.get(key, default)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\django\core\cache\backends\redis.py", line 99, in get
+    value = client.get(key)
+            ^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\redis\commands\core.py", line 1822, in get
+    return self.execute_command("GET", name, keys=[name])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\redis\client.py", line 559, in execute_command
+    return self._execute_command(*args, **options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\redis\client.py", line 565, in _execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\redis\connection.py", line 1422, in get_connection
+    connection.connect()
+  File "C:\Users\Abdallah\AppData\Local\Programs\Python\Python312\Lib\site-packages\redis\connection.py", line 363, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. No connection could be made because the target machine actively refused it.
+INFO 2025-04-09 10:46:17,763 middleware Response 500
+INFO 2025-04-09 10:46:18,799 middleware Request POST /api/v1/users/password-reset/ from 127.0.0.1
+INFO 2025-04-09 10:46:23,860 middleware Response 200
+INFO 2025-04-09 10:46:24,564 middleware Request GET /api/v1/users/verify-email/test-token/ from 127.0.0.1
+INFO 2025-04-09 10:46:24,566 middleware Response 400
+WARNING 2025-04-09 10:46:24,567 log Bad Request: /api/v1/users/verify-email/test-token/
+INFO 2025-04-09 10:46:24,574 middleware Request GET /api/v1/users/ from 127.0.0.1
+INFO 2025-04-09 10:46:24,574 middleware Response 200
+INFO 2025-04-09 10:46:24,582 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+INFO 2025-04-09 10:46:24,585 middleware Response 400
+WARNING 2025-04-09 10:46:24,586 log Bad Request: /api/v1/users/register/
+INFO 2025-04-09 10:46:25,293 middleware Request POST /api/v1/users/password-reset/ from 127.0.0.1
+INFO 2025-04-09 10:46:25,296 middleware Response 200
+INFO 2025-04-09 10:49:31,610 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+INFO 2025-04-09 10:49:31,617 middleware Response 400
+WARNING 2025-04-09 10:49:31,617 log Bad Request: /api/v1/users/register/
+INFO 2025-04-09 10:49:32,718 middleware Request POST /api/v1/users/login/ from 127.0.0.1
+INFO 2025-04-09 10:49:34,386 middleware Response 200
+INFO 2025-04-09 10:49:35,139 middleware Request POST /api/v1/users/password-reset/ from 127.0.0.1
+INFO 2025-04-09 10:49:35,152 middleware Response 200
+INFO 2025-04-09 10:49:35,861 middleware Request GET /api/v1/users/verify-email/test-token/ from 127.0.0.1
+INFO 2025-04-09 10:49:35,862 middleware Response 400
+WARNING 2025-04-09 10:49:35,863 log Bad Request: /api/v1/users/verify-email/test-token/
+INFO 2025-04-09 10:49:35,870 middleware Request GET /api/v1/users/ from 127.0.0.1
+INFO 2025-04-09 10:49:35,870 middleware Response 200
+INFO 2025-04-09 10:49:35,878 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+INFO 2025-04-09 10:49:35,882 middleware Response 400
+WARNING 2025-04-09 10:49:35,883 log Bad Request: /api/v1/users/register/
+INFO 2025-04-09 10:49:36,588 middleware Request POST /api/v1/users/password-reset/ from 127.0.0.1
+INFO 2025-04-09 10:49:36,590 middleware Response 200
+INFO 2025-04-09 10:49:57,783 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+INFO 2025-04-09 10:49:57,789 middleware Response 400
+WARNING 2025-04-09 10:49:57,789 log Bad Request: /api/v1/users/register/
+INFO 2025-04-09 10:49:58,810 middleware Request POST /api/v1/users/login/ from 127.0.0.1
+INFO 2025-04-09 10:49:59,669 middleware Response 200
+INFO 2025-04-09 10:50:00,371 middleware Request POST /api/v1/users/password-reset/ from 127.0.0.1
+INFO 2025-04-09 10:50:00,384 middleware Response 200
+INFO 2025-04-09 10:50:01,097 middleware Request GET /api/v1/users/verify-email/test-token/ from 127.0.0.1
+INFO 2025-04-09 10:50:01,098 middleware Response 400
+WARNING 2025-04-09 10:50:01,099 log Bad Request: /api/v1/users/verify-email/test-token/
+INFO 2025-04-09 10:50:01,106 middleware Request GET /api/v1/users/ from 127.0.0.1
+INFO 2025-04-09 10:50:01,107 middleware Response 200
+INFO 2025-04-09 10:50:01,113 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+INFO 2025-04-09 10:50:01,117 middleware Response 400
+WARNING 2025-04-09 10:50:01,118 log Bad Request: /api/v1/users/register/
+INFO 2025-04-09 10:50:01,827 middleware Request POST /api/v1/users/password-reset/ from 127.0.0.1
+INFO 2025-04-09 10:50:01,829 middleware Response 200
+INFO 2025-04-09 10:51:32,507 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+INFO 2025-04-09 10:51:33,307 middleware Response 201
+INFO 2025-04-09 10:51:34,027 middleware Request POST /api/v1/users/login/ from 127.0.0.1
+INFO 2025-04-09 10:51:34,827 middleware Response 200
+INFO 2025-04-09 10:51:35,555 middleware Request POST /api/v1/users/password-reset/ from 127.0.0.1
+INFO 2025-04-09 10:51:35,558 middleware Response 200
+INFO 2025-04-09 10:51:36,273 middleware Request GET /api/v1/users/verify-email/test-token/ from 127.0.0.1
+INFO 2025-04-09 10:51:36,275 middleware Response 400
+WARNING 2025-04-09 10:51:36,276 log Bad Request: /api/v1/users/verify-email/test-token/
+INFO 2025-04-09 10:51:36,283 middleware Request GET /api/v1/users/ from 127.0.0.1
+INFO 2025-04-09 10:51:36,284 middleware Response 200
+INFO 2025-04-09 10:51:36,290 middleware Request POST /api/v1/users/register/ from 127.0.0.1
+INFO 2025-04-09 10:51:37,012 middleware Response 201
+INFO 2025-04-09 10:51:37,735 middleware Request POST /api/v1/users/password-reset/ from 127.0.0.1
+INFO 2025-04-09 10:51:37,738 middleware Response 200

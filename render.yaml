@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: skillzone-api
+    env: python
+    buildCommand: cd skillzone && pip install -r requirements.txt
+    startCommand: cd skillzone && gunicorn skillzone.wsgi:application
+    autoDeploy: true
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: skillzone-db
+          property: connectionString

@@ -20,13 +20,7 @@ class DebugRequestMiddleware:
         ========================
         """)
         
-        # Return a friendly message for HTTPS attempts
-        if request.is_secure():
-            return JsonResponse({
-                "error": "Please use HTTP instead of HTTPS",
-                "message": "For development, access the API via http://127.0.0.1:8000"
-            }, status=400)
-        
+        # Remove the HTTPS check for production
         return self.get_response(request)
 
 class SecurityHeadersMiddleware:

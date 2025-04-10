@@ -17,3 +17,4 @@ djangorestframework-simplejwt
 firebase-admin
 django-cache-memoize
 redis
+python-dotenv

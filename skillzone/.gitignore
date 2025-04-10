@@ -48,3 +48,8 @@ Thumbs.db
 # Project specific
 debug.log
 *.pyc
+
+# Backup files
+skillzone_backup*/
+*.sql
+*.zip

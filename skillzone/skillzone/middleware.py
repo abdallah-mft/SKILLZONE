@@ -1,63 +1,58 @@
 import logging
-import traceback
-from django.http import JsonResponse
-from rest_framework import status
-from django.core.exceptions import ValidationError
-from rest_framework.exceptions import APIException
-from django.core.cache import cache
-from rest_framework.response import Response
-from django.conf import settings
+from django.http import HttpResponse, JsonResponse
 
 logger = logging.getLogger(__name__)
 
-class FlutterErrorHandlerMiddleware:
+class DebugRequestMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        try:
-            response = self.get_response(request)
-            return response
-        except Exception as e:
-            return self.process_exception(request, e)
-
-    def process_exception(self, request, exception):
-        # Log full traceback
-        logger.error(f"Detailed error traceback:\n{traceback.format_exc()}")
+        # Log request details
+        logger.info(f"""
+        ====== Request Debug ======
+        Path: {request.path}
+        Method: {request.method}
+        Scheme: {request.scheme}
+        Headers: {dict(request.headers)}
+        Client IP: {request.META.get('REMOTE_ADDR')}
+        Is Secure: {request.is_secure()}
+        ========================
+        """)
         
-        if isinstance(exception, ValidationError):
-            status_code = status.HTTP_400_BAD_REQUEST
-        elif isinstance(exception, APIException):
-            status_code = exception.status_code
-        else:
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        # Return a friendly message for HTTPS attempts
+        if request.is_secure():
+            return JsonResponse({
+                "error": "Please use HTTP instead of HTTPS",
+                "message": "For development, access the API via http://127.0.0.1:8000"
+            }, status=400)
+        
+        return self.get_response(request)
 
-        error_message = str(exception)
-        logger.error(f"Error processing request: {error_message}")
-
-        return JsonResponse({
-            'success': False,
-            'message': error_message,
-            'data': None
-        }, status=status_code)
-
-class RequestLoggingMiddleware:
+class SecurityHeadersMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # Log the request
-        logger.info(f"Request {request.method} {request.path} from {request.META.get('REMOTE_ADDR')}")
-        
         response = self.get_response(request)
         
-        # Log the response
-        logger.info(f"Response {response.status_code}")
+        # Add security headers
+        response['X-Content-Type-Options'] = 'nosniff'
+        response['X-Frame-Options'] = 'DENY'
+        response['X-XSS-Protection'] = '1; mode=block'
+        response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        
+        if not settings.DEBUG:  # Now settings is properly imported
+            response['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+            response['Content-Security-Policy'] = (
+                "default-src 'self'; "
+                "img-src 'self' data: https:; "
+                "style-src 'self' 'unsafe-inline'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "connect-src 'self';"
+            )
+        
         return response
-
-    def process_exception(self, request, exception):
-        logger.error(f"Exception in {request.method} {request.path}: {str(exception)}")
-        return None
 
 class RateLimitMiddleware:
     def __init__(self, get_response):
@@ -70,10 +65,10 @@ class RateLimitMiddleware:
             attempts = cache.get(key, 0)
 
             if attempts >= 5:
-                return Response({
+                return JsonResponse({
                     'success': False,
                     'message': 'Too many login attempts. Please try again later.'
-                }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+                }, status=429)
 
             cache.set(key, attempts + 1, 900)  # 15 minutes timeout
 

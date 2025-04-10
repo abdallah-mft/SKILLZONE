@@ -1,46 +1,57 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Profile, Level
-
-class LevelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Level
-        fields = ('name', 'min_points', 'max_points', 'badge_url')
+from .models import Profile
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name')
+        fields = ('id', 'username', 'email')
 
 class ProfileSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    full_name = serializers.SerializerMethodField()
-    level = serializers.SerializerMethodField()
-    next_level = serializers.SerializerMethodField()
-    points_to_next_level = serializers.SerializerMethodField()
-    
     class Meta:
         model = Profile
-        fields = ('user', 'points', 'full_name', 'level', 'next_level', 'points_to_next_level')
-    
-    def get_full_name(self, obj):
-        return f"{obj.user.first_name} {obj.user.last_name}".strip()
+        fields = '__all__'
 
-    def get_level(self, obj):
-        current_level = obj.get_level()
-        return LevelSerializer(current_level).data if current_level else None
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True)
+    password2 = serializers.CharField(write_only=True, required=True)
+    accept_terms = serializers.BooleanField(write_only=True, required=True)
+    email = serializers.EmailField(required=True)
 
-    def get_next_level(self, obj):
-        current_level = obj.get_level()
-        if current_level:
-            next_level = Level.objects.filter(min_points__gt=current_level.max_points).order_by('min_points').first()
-            return LevelSerializer(next_level).data if next_level else None
-        return None
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password', 'password2', 'accept_terms', 'first_name', 'last_name')
+        extra_kwargs = {
+            'first_name': {'required': False},
+            'last_name': {'required': False}
+        }
 
-    def get_points_to_next_level(self, obj):
-        current_level = obj.get_level()
-        if current_level:
-            next_level = Level.objects.filter(min_points__gt=current_level.max_points).order_by('min_points').first()
-            if next_level:
-                return next_level.min_points - obj.points
-        return 0
+    def validate(self, data):
+        errors = {}
+        
+        if not data.get('password'):
+            errors['password'] = ['This field is required.']
+        if not data.get('password2'):
+            errors['password2'] = ['This field is required.']
+        if not data.get('accept_terms'):
+            errors['accept_terms'] = ['Terms must be accepted.']
+            
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        if data.get('password') != data.get('password2'):
+            raise serializers.ValidationError({'password': ["Passwords don't match."]})
+        
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('password2')
+        validated_data.pop('accept_terms')
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', '')
+        )
+        return user

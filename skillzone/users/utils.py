@@ -1,70 +1,92 @@
 import os
+import uuid
 from PIL import Image
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
 from django.conf import settings
-from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+import logging
+
+logger = logging.getLogger(__name__)
 
 def handle_avatar_upload(image_file, user_id):
-    """Process and save avatar image with validation and optimization"""
+    """
+    Handle avatar image upload, including validation and processing
+    """
+    # Validate file type
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif']
+    if not hasattr(image_file, 'content_type') or image_file.content_type not in allowed_types:
+        raise ValueError('Invalid file type. Only JPEG, PNG and GIF are allowed.')
+
+    # Validate file size (max 5MB)
+    if image_file.size > 5 * 1024 * 1024:
+        raise ValueError('File too large. Maximum size is 5MB.')
+
+    # Generate unique filename
+    ext = os.path.splitext(image_file.name)[1].lower()
+    filename = f'avatar_{user_id}_{uuid.uuid4().hex[:8]}{ext}'
+    
+    # Create upload path
+    upload_path = os.path.join('avatars', filename)
+    full_path = os.path.join(settings.MEDIA_ROOT, 'avatars', filename)
+    
+    # Ensure directory exists
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+    # Process and save image
     try:
-        # Open image using PIL
-        img = Image.open(image_file)
-        
-        # Validate file type
-        allowed_types = {'PNG', 'JPEG', 'JPG'}
-        if img.format not in allowed_types:
-            raise ValueError("Invalid image format. Allowed formats: PNG, JPEG, JPG")
+        with Image.open(image_file) as img:
+            # Convert to RGB if necessary
+            if img.mode not in ('RGB', 'RGBA'):
+                img = img.convert('RGB')
             
-        # Validate file size (max 5MB)
-        if image_file.size > 5 * 1024 * 1024:
-            raise ValueError("Image size too large. Maximum size: 5MB")
+            # Resize if too large (max 800x800)
+            if img.height > 800 or img.width > 800:
+                img.thumbnail((800, 800))
             
-        # Resize image while maintaining aspect ratio
-        max_size = (800, 800)
-        img.thumbnail(max_size, Image.Resampling.LANCZOS)
-        
-        # Convert to RGB if necessary
-        if img.mode != 'RGB':
-            img = img.convert('RGB')
+            # Save processed image
+            img.save(full_path, quality=85, optimize=True)
             
-        # Generate unique filename
-        filename = f"avatar_{user_id}_{os.urandom(8).hex()}.jpg"
-        path = os.path.join('avatars', filename)
-        
-        # Save optimized image
-        output = ContentFile(b'')
-        img.save(output, format='JPEG', quality=85, optimize=True)
-        output.seek(0)
-        
-        # Save using Django's storage system
-        path = default_storage.save(path, output)
-        
-        return path
+        return upload_path
         
     except Exception as e:
-        raise ValueError(f"Error processing image: {str(e)}")
+        logger.error(f"Error processing avatar image: {str(e)}")
+        if os.path.exists(full_path):
+            os.remove(full_path)
+        raise ValueError('Error processing image file')
 
 def send_verification_email(user, verification_url):
     """Send HTML email verification"""
+    subject = 'Verify your Skillzone account'
+    from_email = settings.DEFAULT_FROM_EMAIL
+    to_email = user.email
+
     context = {
         'user': user,
         'verification_url': verification_url,
         'expiry_days': settings.EMAIL_VERIFICATION_TIMEOUT_DAYS
     }
     
+    # Render email templates
     html_content = render_to_string('email/verification.html', context)
     text_content = f"Please verify your email by clicking: {verification_url}"
     
+    # Create email message
     msg = EmailMultiAlternatives(
-        'Verify your Skillzone account',
-        text_content,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email]
+        subject=subject,
+        body=text_content,
+        from_email=from_email,
+        to=[to_email]
     )
     msg.attach_alternative(html_content, "text/html")
-    msg.send()
+    
+    # Send email
+    try:
+        msg.send(fail_silently=False)
+        logger.info(f"Verification email sent successfully to {to_email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send verification email to {to_email}: {str(e)}")
+        raise
 
 def send_password_reset_email(user, reset_url):
     """Send HTML password reset email"""
@@ -84,3 +106,7 @@ def send_password_reset_email(user, reset_url):
     )
     msg.attach_alternative(html_content, "text/html")
     msg.send()
+
+
+
+

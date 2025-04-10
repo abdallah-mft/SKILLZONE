@@ -1,3 +1,4 @@
+import logging
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework.decorators import api_view, permission_classes
@@ -8,7 +9,7 @@ from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404
 from django.db.utils import IntegrityError
 from .models import Profile
-from .serializers import UserSerializer, ProfileSerializer
+from .serializers import UserSerializer, ProfileSerializer, UserRegistrationSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.validators import validate_email, ValidationError
 from django.db import transaction
@@ -20,12 +21,15 @@ from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse
 from django.conf import settings
 from django.utils import timezone
-from .utils import handle_avatar_upload
+from .utils import handle_avatar_upload, send_verification_email
 import os
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode
 from django.http import JsonResponse
+from rest_framework.views import APIView
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -37,99 +41,67 @@ def index(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    """Registers a new user with enhanced validation and email verification"""
+    logger.info("Starting registration process")
+    
+    serializer = UserRegistrationSerializer(data=request.data)
+    
+    if not serializer.is_valid():
+        return Response({
+            'success': False,
+            'message': 'Validation error',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    validated_data = serializer.validated_data
+
+    if not validated_data.get('accept_terms'):
+        return Response({
+            'success': False,
+            'message': 'Validation error',
+            'errors': {
+                'accept_terms': ['Terms must be accepted.']
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     try:
-        email = request.data.get('email', '').lower().strip()
-        username = request.data.get('username', '').strip()
-        password = request.data.get('password')
-        first_name = request.data.get('first_name', '').strip()
-        last_name = request.data.get('last_name', '').strip()
-
-        # Enhanced validation
-        errors = {}
-        
-        # Email validation
-        if not email:
-            errors['email'] = 'Email is required'
-        elif User.objects.filter(email=email).exists():
-            errors['email'] = 'Email already registered'
-        else:
-            try:
-                validate_email(email)
-            except ValidationError:
-                errors['email'] = 'Invalid email format'
-
-        # Username validation
-        if not username:
-            errors['username'] = 'Username is required'
-        elif len(username) < 3:
-            errors['username'] = 'Username must be at least 3 characters'
-        elif User.objects.filter(username=username).exists():
-            errors['username'] = 'Username already exists'
-
-        # Password validation
-        if not password:
-            errors['password'] = 'Password is required'
-        elif len(password) < 8:
-            errors['password'] = 'Password must be at least 8 characters'
-        elif not any(c.isdigit() for c in password):
-            errors['password'] = 'Password must contain at least one number'
-        elif not any(c.isupper() for c in password):
-            errors['password'] = 'Password must contain at least one uppercase letter'
-
-        if errors:
-            return Response({
-                'success': False,
-                'message': 'Validation failed',
-                'errors': errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Create user with transaction
         with transaction.atomic():
+            # Remove non-user fields
+            user_data = validated_data.copy()
+            user_data.pop('password2', None)
+            user_data.pop('accept_terms', None)
+            password = user_data.pop('password', None)
+            
+            # Create user
             user = User.objects.create_user(
-                username=username,
-                email=email,
                 password=password,
-                first_name=first_name,
-                last_name=last_name,
-                is_active=True  # User can login but email needs verification
+                **user_data
             )
             
+            # Skip email verification for now
             profile = user.profile
-            verification_token = profile.generate_verification_token()
-            
-            # Send verification email
-            verification_url = request.build_absolute_uri(
-                reverse('verify-email', args=[verification_token])
-            )
-            
-            send_mail(
-                'Verify your email address',
-                f'Click here to verify your email: {verification_url}',
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-            )
-            
+            profile.email_verified = True  # Auto-verify for development
+            profile.save()
+
+            # Authenticate user
             refresh = RefreshToken.for_user(user)
+            serializer = ProfileSerializer(profile)
             
             return Response({
-                'success': True,
-                'message': 'Registration successful. Please check your email to verify your account.',
-                'data': {
-                    'tokens': {
-                        'access': str(refresh.access_token),
-                        'refresh': str(refresh)
-                    },
-                    'user': ProfileSerializer(profile).data
+                "success": True,
+                "message": "Registration successful",
+                "data": {
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                    "user": serializer.data
                 }
             }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
+        logger.error(f"Registration error: {str(e)}")
         return Response({
-            'success': False,
-            'message': str(e),
-            'data': None
+            "success": False,
+            "message": "Registration failed",
+            "errors": {"detail": str(e)}
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
@@ -208,23 +180,20 @@ def update_points(request):
 
     if not isinstance(points_to_add, (int, float)) or points_to_add < 0:
         return Response({
-            "error": "Invalid points value"
+            "success": False,
+            "message": "Invalid points value",
+            "data": None
         }, status=status.HTTP_400_BAD_REQUEST)
 
     profile = request.user.profile
-    old_level = profile.get_level()
-    
     profile.points += points_to_add
     profile.save()
-    
-    new_level = profile.get_level()
-    level_changed = old_level != new_level if old_level and new_level else False
 
     serializer = ProfileSerializer(profile)
     return Response({
+        "success": True,
         "message": "Points updated successfully",
-        "level_up": level_changed,
-        "profile": serializer.data
+        "data": serializer.data
     }, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
@@ -289,69 +258,36 @@ def logout(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_profile(request):
-    """Update user profile information"""
     try:
         user = request.user
         profile = user.profile
         
-        # Update basic user info
+        # Update user fields
         if 'first_name' in request.data:
             user.first_name = request.data['first_name']
         if 'last_name' in request.data:
             user.last_name = request.data['last_name']
-            
-        # Update email with validation
-        if 'email' in request.data:
-            new_email = request.data['email'].lower().strip()
-            if new_email != user.email:
-                if User.objects.filter(email=new_email).exists():
-                    return Response({
-                        'success': False,
-                        'message': 'Email already exists',
-                        'data': None
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                try:
-                    validate_email(new_email)
-                    user.email = new_email
-                except ValidationError:
-                    return Response({
-                        'success': False,
-                        'message': 'Invalid email format',
-                        'data': None
-                    }, status=status.HTTP_400_BAD_REQUEST)
+        user.save()
         
         # Update profile fields
         if 'bio' in request.data:
             profile.bio = request.data['bio']
-            
         if 'notification_preferences' in request.data:
-            profile.notification_preferences.update(
-                request.data['notification_preferences']
-            )
-            
-        # Handle avatar upload
-        if 'avatar' in request.FILES:
-            if profile.avatar:
-                profile.avatar.delete()  # Delete old avatar
-            profile.avatar = request.FILES['avatar']
+            profile.notification_preferences = request.data['notification_preferences']
+        profile.save()
         
-        # Save changes
-        with transaction.atomic():
-            user.save()
-            profile.save()
-        
+        serializer = ProfileSerializer(profile)
         return Response({
             'success': True,
             'message': 'Profile updated successfully',
-            'data': ProfileSerializer(profile).data
-        })
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
         
     except Exception as e:
         return Response({
             'success': False,
-            'message': str(e),
-            'data': None
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'message': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -535,30 +471,32 @@ def update_avatar(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def verify_email(request, token):
-    """
-    Verify user's email using the verification token
-    """
     try:
-        profile = get_object_or_404(Profile, email_verification_token=token)
+        profile = Profile.objects.get(email_verification_token=token)
         
-        if profile.email_verified:
-            return JsonResponse({
+        if not profile.is_verification_token_valid(token):
+            return Response({
                 'success': False,
-                'message': 'Email already verified'
+                'message': 'Invalid or expired verification token'
             }, status=status.HTTP_400_BAD_REQUEST)
-
+            
         profile.verify_email()
-        
-        return JsonResponse({
+        return Response({
             'success': True,
             'message': 'Email verified successfully'
         })
-        
-    except Exception as e:
-        return JsonResponse({
+            
+    except Profile.DoesNotExist:
+        return Response({
             'success': False,
-            'message': 'Invalid or expired verification token'
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'message': 'Invalid verification token'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Verification error: {str(e)}")  # Debug print
+        return Response({
+            'success': False,
+            'message': 'Verification failed'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -601,3 +539,61 @@ def password_reset_confirm(request, uidb64, token):
             'message': 'Invalid password reset link'
         }, status=status.HTTP_400_BAD_REQUEST)
         
+class UserRegistrationView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        # Validate passwords match
+        if request.data.get('password') != request.data.get('password2'):
+            return Response({
+                'success': False,
+                'message': 'Passwords do not match'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate terms acceptance
+        if not request.data.get('accept_terms'):
+            return Response({
+                'success': False,
+                'message': 'Terms must be accepted'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({
+                'success': True,
+                'data': {
+                    'user': {
+                        'id': user.id,
+                        'username': user.username,
+                        'email': user.email
+                    }
+                }
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+class EmailVerificationView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        try:
+            profile = Profile.objects.get(verification_token=token)
+            if not profile.email_verified:
+                profile.email_verified = True
+                profile.save()
+                return Response({
+                    'success': True,
+                    'message': 'Email verified successfully'
+                })
+            return Response({
+                'success': False,
+                'message': 'Email already verified'
+            })
+        except Profile.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Invalid verification token'
+            }, status=status.HTTP_400_BAD_REQUEST)

@@ -191,8 +191,8 @@ if DEBUG:
     CORS_ALLOW_CREDENTIALS = True
 else:
     CORS_ALLOWED_ORIGINS = [
-        "https://your-production-domain.com",
-        "https://api.your-production-domain.com",
+        "https://skillzone-2vs6.onrender.com",
+        # Add your frontend domain if different
     ]
     CORS_ALLOW_CREDENTIALS = True
 

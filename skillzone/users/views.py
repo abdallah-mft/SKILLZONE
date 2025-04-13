@@ -82,15 +82,19 @@ def register(request):
                 send_verification_email(user)
             except Exception as e:
                 logger.error(f"Failed to send verification email: {str(e)}")
-                # You might want to return an error response here
+                return Response({
+                    "success": False,
+                    "message": "Registration successful but failed to send verification email",
+                    "errors": {"email": str(e)}
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            # Authenticate user
+            # Generate tokens
             refresh = RefreshToken.for_user(user)
             serializer = ProfileSerializer(user.profile)
             
             return Response({
                 "success": True,
-                "message": "Registration successful",
+                "message": "Registration successful. Please check your email for verification code.",
                 "data": {
                     "access": str(refresh.access_token),
                     "refresh": str(refresh),

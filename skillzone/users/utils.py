@@ -56,35 +56,39 @@ def handle_avatar_upload(image_file, user_id):
 
 def send_verification_email(user):
     """Send verification code via email"""
-    verification_code = user.profile.generate_verification_code()
-    subject = 'Verify your Skillzone account'
-    from_email = settings.DEFAULT_FROM_EMAIL
-    to_email = user.email
-
-    context = {
-        'user': user,
-        'verification_code': verification_code,
-    }
-    
-    # Render email templates
-    html_content = render_to_string('email/verification.html', context)
-    text_content = f"Your verification code is: {verification_code}"
-    
-    # Create email message
-    msg = EmailMultiAlternatives(
-        subject=subject,
-        body=text_content,
-        from_email=from_email,
-        to=[to_email]
-    )
-    msg.attach_alternative(html_content, "text/html")
-    
     try:
+        verification_code = user.profile.generate_verification_code()
+        subject = 'Verify your Skillzone account'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to_email = user.email
+
+        context = {
+            'user': user,
+            'verification_code': verification_code,
+        }
+        
+        html_content = render_to_string('email/verification.html', context)
+        text_content = f"Your verification code is: {verification_code}"
+        
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=from_email,
+            to=[to_email]
+        )
+        msg.attach_alternative(html_content, "text/html")
+        
+        # Add debug logging
+        print(f"Attempting to send email to {to_email}")
+        print(f"Using SMTP settings: {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
+        print(f"SSL: {settings.EMAIL_USE_SSL}, TLS: {settings.EMAIL_USE_TLS}")
+        
         msg.send(fail_silently=False)
-        logger.info(f"Verification email sent successfully to {to_email}")
         return True
     except Exception as e:
-        logger.error(f"Failed to send verification email to {to_email}: {str(e)}")
+        print(f"Detailed error: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
         raise
 
 def send_password_reset_email(user, reset_url):
@@ -105,6 +109,7 @@ def send_password_reset_email(user, reset_url):
     )
     msg.attach_alternative(html_content, "text/html")
     msg.send()
+
 
 
 

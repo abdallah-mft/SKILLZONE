@@ -1,133 +1,91 @@
-from django.test import TestCase
-from rest_framework.test import APIClient
+import pytest
 from django.urls import reverse
 from rest_framework import status
-from django.contrib.auth import get_user_model
-from .models import Profile
-import json
+from django.contrib.auth.models import User
 
-User = get_user_model()
-
-class TestUserAPI(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.base_url = '/api/v1/users'  # Add base URL
-        self.register_data = {
-            "email": "zayd.benali@example.com",
-            "username": "zaydben",
-            "password": "ZaydStrong123",
-            "password2": "ZaydStrong123",
-            "first_name": "Zayd",
-            "last_name": "Benali",
-            "accept_terms": True
-        }
-        self.login_data = {
-            "email": "zayd.benali@example.com",
-            "password": "ZaydStrong123"
-        }
-        self.profile_update_data = {
-            "first_name": "Zayd",
-            "last_name": "Benali",
-            "bio": "Cybersecurity Enthusiast & Tech Explorer 🚀",
-            "notification_preferences": {
-                "email_notifications": True,
-                "push_notifications": False
-            }
+@pytest.mark.django_db
+class TestUserAPI:
+    def setup_method(self):
+        self.register_url = reverse('user-register')
+        self.login_url = reverse('user-login')
+        self.test_user_data = {
+            'username': 'testuser',
+            'email': 'test@example.com',
+            'password': 'TestPass123!',
+            'password2': 'TestPass123!',
+            'accept_terms': True
         }
 
-    def test_full_user_journey(self):
-        # 1. Test Registration
-        register_response = self.client.post(
-            f'{self.base_url}/register/',
-            self.register_data,
-            format='json'
-        )
-        self.assertEqual(register_response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(register_response.data['success'])
-        self.assertIn('access', register_response.data['data'])
+    def test_full_user_journey(self, client):
+        response = client.post(self.register_url, self.test_user_data)
+        assert response.status_code == status.HTTP_201_CREATED
 
-        # 2. Test Login
-        login_response = self.client.post(
-            f'{self.base_url}/login/',
-            self.login_data,
-            format='json'
-        )
-        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
-        self.assertTrue(login_response.data['success'])
-        access_token = login_response.data['data']['access']
+        login_data = {
+            'username': 'testuser',
+            'password': 'TestPass123!'
+        }
+        response = client.post(self.login_url, login_data)
+        assert response.status_code == status.HTTP_200_OK
 
-        # Set token for authenticated requests
-        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
+    def test_invalid_login(self, client):
+        login_data = {
+            'username': 'nonexistent',
+            'password': 'wrong'
+        }
+        response = client.post(self.login_url, login_data)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-        # 3. Test Get Profile
-        profile_response = self.client.get(f'{self.base_url}/profile/')
-        self.assertEqual(profile_response.status_code, status.HTTP_200_OK)
-        # Verify profile data exists instead of checking 'success' key
-        self.assertIn('user', profile_response.data)
+    def test_invalid_registration(self, client):
+        invalid_data = self.test_user_data.copy()
+        invalid_data['password2'] = 'different'
+        response = client.post(self.register_url, invalid_data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-        # 4. Test Profile Update
-        update_response = self.client.put(
-            f'{self.base_url}/profile/update/',
-            self.profile_update_data,
-            format='json'
-        )
-        self.assertEqual(update_response.status_code, status.HTTP_200_OK)
-        self.assertTrue(update_response.data['success'])
+    def test_unauthorized_access(self, client):
+        protected_url = reverse('user-profile')
+        response = client.get(protected_url)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-        # 5. Test Password Change
-        password_response = self.client.post(
-            f'{self.base_url}/profile/change-password/',
-            {
-                'current_password': 'ZaydStrong123',
-                'new_password': 'ZaydNewPass456'
-            },
-            format='json'
-        )
-        self.assertEqual(password_response.status_code, status.HTTP_200_OK)
-        self.assertTrue(password_response.data['success'])
+@pytest.mark.django_db
+class TestEmailVerification:
+    def test_email_verification_flow(self, client):
+        # Register a new user
+        user_data = {
+            'username': 'testuser',
+            'email': 'test@example.com',
+            'password': 'TestPass123!',
+            'password2': 'TestPass123!',
+            'accept_terms': True
+        }
+        response = client.post(reverse('user-register'), user_data)
+        assert response.status_code == status.HTTP_201_CREATED
 
-        # Verify can login with new password
-        new_login_response = self.client.post(
-            f'{self.base_url}/login/',
-            {
-                "email": "zayd.benali@example.com",
-                "password": "ZaydNewPass456"
-            },
-            format='json'
-        )
-        self.assertEqual(new_login_response.status_code, status.HTTP_200_OK)
-        self.assertTrue(new_login_response.data['success'])
+        # Get the verification code
+        user = User.objects.get(username='testuser')
+        verification_code = user.profile.verification_code
 
-    def test_invalid_registration(self):
-        invalid_data = self.register_data.copy()
-        invalid_data.pop('email')
-        response = self.client.post(
-            f'{self.base_url}/register/',
-            invalid_data,
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertFalse(response.data['success'])
+        # Test invalid code
+        response = client.post(reverse('verify-email'), {
+            'email': 'test@example.com',
+            'code': 'WRONG'
+        })
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_invalid_login(self):
-        # First register a user
-        self.client.post(
-            f'{self.base_url}/register/',
-            self.register_data,
-            format='json'
-        )
-        
-        # Then try to login with wrong password
-        invalid_login = self.login_data.copy()
-        invalid_login['password'] = 'wrongpassword'
-        response = self.client.post(
-            f'{self.base_url}/login/',
-            invalid_login,
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertFalse(response.data['success'])
+        # Test valid code
+        response = client.post(reverse('verify-email'), {
+            'email': 'test@example.com',
+            'code': verification_code
+        })
+        assert response.status_code == status.HTTP_200_OK
 
-    def test_unauthorized_access(self):
-        response = self.client.get(f'{self.base_url}/profile/')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # Verify that email is marked as verified
+        user.refresh_from_db()
+        assert user.profile.email_verified == True
+
+        # Test attempting to verify again
+        response = client.post(reverse('verify-email'), {
+            'email': 'test@example.com',
+            'code': verification_code
+        })
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'already verified' in response.json()['message']

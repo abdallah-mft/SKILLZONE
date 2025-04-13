@@ -1,15 +1,19 @@
+import random
+import string
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 import uuid
+from django.utils import timezone
 
 User = get_user_model()
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    verification_token = models.UUIDField(default=uuid.uuid4, editable=False)
+    verification_code = models.CharField(max_length=4, blank=True)
     email_verified = models.BooleanField(default=False)
+    code_created_at = models.DateTimeField(null=True)
     bio = models.TextField(max_length=500, blank=True)
     notification_preferences = models.JSONField(default=dict)
     points = models.IntegerField(default=0)
@@ -24,10 +28,32 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username}'s profile"
 
-    def generate_verification_token(self):
-        self.verification_token = uuid.uuid4()
+    def generate_verification_code(self):
+        """Generate a 4-digit verification code using uppercase letters and numbers"""
+        characters = string.ascii_uppercase + string.digits
+        self.verification_code = ''.join(random.choices(characters, k=4))
+        self.code_created_at = timezone.now()
         self.save()
-        return self.verification_token
+        return self.verification_code
+
+    def is_verification_code_valid(self, code):
+        """Check if verification code is valid and not expired"""
+        if not self.code_created_at:
+            return False
+        
+        # Check if code is expired (valid for 1 hour)
+        time_diff = timezone.now() - self.code_created_at
+        if time_diff.total_seconds() > 3600:  # 1 hour in seconds
+            return False
+            
+        return self.verification_code == code.upper()
+
+    def verify_email(self):
+        """Mark email as verified and clear verification code"""
+        self.email_verified = True
+        self.verification_code = ''
+        self.code_created_at = None
+        self.save()
 
     def get_level(self):
         """Calculate user level based on points"""

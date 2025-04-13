@@ -468,16 +468,33 @@ def update_avatar(request):
             'message': 'Error updating avatar'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([AllowAny])
-def verify_email(request, token):
+def verify_email(request):
+    """Verify email with 4-digit code"""
+    code = request.data.get('code', '').strip().upper()
+    email = request.data.get('email', '').strip().lower()
+    
+    if not code or not email:
+        return Response({
+            'success': False,
+            'message': 'Both email and verification code are required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     try:
-        profile = Profile.objects.get(email_verification_token=token)
+        user = User.objects.get(email=email)
+        profile = user.profile
         
-        if not profile.is_verification_token_valid(token):
+        if profile.email_verified:
             return Response({
                 'success': False,
-                'message': 'Invalid or expired verification token'
+                'message': 'Email is already verified'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        if not profile.is_verification_code_valid(code):
+            return Response({
+                'success': False,
+                'message': 'Invalid or expired verification code'
             }, status=status.HTTP_400_BAD_REQUEST)
             
         profile.verify_email()
@@ -486,17 +503,11 @@ def verify_email(request, token):
             'message': 'Email verified successfully'
         })
             
-    except Profile.DoesNotExist:
+    except User.DoesNotExist:
         return Response({
             'success': False,
-            'message': 'Invalid verification token'
+            'message': 'User not found'
         }, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        print(f"Verification error: {str(e)}")  # Debug print
-        return Response({
-            'success': False,
-            'message': 'Verification failed'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

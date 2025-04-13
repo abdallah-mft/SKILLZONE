@@ -54,21 +54,21 @@ def handle_avatar_upload(image_file, user_id):
             os.remove(full_path)
         raise ValueError('Error processing image file')
 
-def send_verification_email(user, verification_url):
-    """Send HTML email verification"""
+def send_verification_email(user):
+    """Send verification code via email"""
+    verification_code = user.profile.generate_verification_code()
     subject = 'Verify your Skillzone account'
     from_email = settings.DEFAULT_FROM_EMAIL
     to_email = user.email
 
     context = {
         'user': user,
-        'verification_url': verification_url,
-        'expiry_days': settings.EMAIL_VERIFICATION_TIMEOUT_DAYS
+        'verification_code': verification_code,
     }
     
     # Render email templates
     html_content = render_to_string('email/verification.html', context)
-    text_content = f"Please verify your email by clicking: {verification_url}"
+    text_content = f"Your verification code is: {verification_code}"
     
     # Create email message
     msg = EmailMultiAlternatives(
@@ -79,7 +79,6 @@ def send_verification_email(user, verification_url):
     )
     msg.attach_alternative(html_content, "text/html")
     
-    # Send email
     try:
         msg.send(fail_silently=False)
         logger.info(f"Verification email sent successfully to {to_email}")
@@ -106,6 +105,7 @@ def send_password_reset_email(user, reset_url):
     )
     msg.attach_alternative(html_content, "text/html")
     msg.send()
+
 
 
 

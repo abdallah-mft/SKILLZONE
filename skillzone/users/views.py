@@ -76,15 +76,17 @@ def register(request):
                 password=password,
                 **user_data
             )
-            
-            # Skip email verification for now
-            profile = user.profile
-            profile.email_verified = True  # Auto-verify for development
-            profile.save()
+
+            # Send verification email
+            try:
+                send_verification_email(user)
+            except Exception as e:
+                logger.error(f"Failed to send verification email: {str(e)}")
+                # You might want to return an error response here
 
             # Authenticate user
             refresh = RefreshToken.for_user(user)
-            serializer = ProfileSerializer(profile)
+            serializer = ProfileSerializer(user.profile)
             
             return Response({
                 "success": True,

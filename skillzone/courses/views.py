@@ -10,51 +10,45 @@ from .serializers import CourseSerializer
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def courses_list(request):
-    """Enhanced course listing with filters"""
+    """Get all courses with filters"""
     try:
-        search = request.GET.get('search', '')
-        course_type = request.GET.get('type', '')
-        category = request.GET.get('category', '')
-        difficulty = request.GET.get('difficulty', '')
-        tags = request.GET.get('tags', '').split(',')
+        # Get query parameters
+        category = request.GET.get('category')
+        difficulty = request.GET.get('difficulty')
+        search = request.GET.get('search')
+        course_type = request.GET.get('type')
         page = int(request.GET.get('page', 1))
         per_page = int(request.GET.get('per_page', 10))
 
-        # Filter courses
+        # Base queryset
         courses = Course.objects.all()
-        
+
+        # Apply filters
+        if category:
+            courses = courses.filter(category=category)
+        if difficulty:
+            courses = courses.filter(difficulty_level=difficulty)
+        if course_type:
+            courses = courses.filter(course_type=course_type)
         if search:
             courses = courses.filter(
                 Q(title__icontains=search) |
                 Q(description__icontains=search)
             )
-        
-        if course_type:
-            courses = courses.filter(course_type=course_type)
-            
-        if category:
-            courses = courses.filter(category=category)
-            
-        if difficulty:
-            courses = courses.filter(difficulty_level=difficulty)
-            
-        if tags and tags[0]:  # Check if tags list is not empty
-            for tag in tags:
-                courses = courses.filter(tags__icontains=tag.strip())
 
-        # Pagination
-        start = (page - 1) * per_page
-        end = start + per_page
-        total = courses.count()
-
-        # Get categories and tags for filters
+        # Get unique categories and tags for filters
         all_categories = Course.objects.values_list('category', flat=True).distinct()
         all_tags = set()
-        for tags_str in Course.objects.values_list('tags', flat=True):
-            if tags_str:
-                all_tags.update(tag.strip() for tag in tags_str.split(','))
+        for tags in Course.objects.values_list('tags', flat=True):
+            if tags:
+                all_tags.update(tag.strip() for tag in tags.split(','))
 
+        # Calculate pagination
+        total = courses.count()
+        start = (page - 1) * per_page
+        end = start + per_page
         courses = courses[start:end]
+
         serializer = CourseSerializer(courses, many=True, context={'request': request})
 
         return Response({
@@ -62,14 +56,18 @@ def courses_list(request):
             "message": "Courses retrieved successfully",
             "data": {
                 'courses': serializer.data,
-                'total': total,
-                'page': page,
-                'total_pages': (total + per_page - 1) // per_page,
+                'pagination': {
+                    'total': total,
+                    'page': page,
+                    'per_page': per_page,
+                    'total_pages': (total + per_page - 1) // per_page
+                },
                 'user_points': request.user.profile.points,
                 'filters': {
                     'categories': list(all_categories),
                     'tags': list(all_tags),
-                    'difficulties': ['BEGINNER', 'INTERMEDIATE', 'ADVANCED']
+                    'difficulties': ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'],
+                    'types': ['SOFT', 'HARD']
                 }
             }
         })
@@ -228,20 +226,28 @@ def mark_lesson_complete(request, lesson_id):
         lesson = get_object_or_404(Lesson, id=lesson_id)
         user_profile = request.user.profile
         
-        # Check if lesson is unlocked
-        unlocked_lesson = UnlockedLesson.objects.filter(
-            user=user_profile, 
+        # First check if the course is unlocked (for HARD courses)
+        course = lesson.course
+        if course.course_type == 'HARD':
+            course_unlocked = UnlockedCourse.objects.filter(
+                user=user_profile,
+                course=course
+            ).exists()
+            
+            if not course_unlocked:
+                return Response({
+                    "success": False,
+                    "message": "Course not unlocked",
+                    "data": None
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get or create the unlocked lesson record
+        unlocked_lesson, created = UnlockedLesson.objects.get_or_create(
+            user=user_profile,
             lesson=lesson
-        ).first()
+        )
         
-        if not unlocked_lesson:
-            return Response({
-                "success": False,
-                "message": "Lesson not unlocked",
-                "data": None
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Add completed_at timestamp to UnlockedLesson
+        # Mark as completed
         if not unlocked_lesson.completed_at:
             unlocked_lesson.completed_at = timezone.now()
             unlocked_lesson.save()

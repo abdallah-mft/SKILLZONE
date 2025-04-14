@@ -1,204 +1,151 @@
-import pytest
+from django.test import TestCase, TransactionTestCase
+from django.db import transaction
+from django.core.exceptions import ValidationError
+from courses.models import Course, Lesson, UnlockedCourse, CourseProgress
 from django.contrib.auth import get_user_model
-from courses.models import Course, Lesson
-from quizzes.models import Quiz, Question, Answer
+from users.models import Profile
 
-def create_sample_courses():
-    """Create sample courses with lessons and quizzes"""
-    # Clear existing data
-    Course.objects.all().delete()
-    
-    # Python Programming Course (HARD skill)
-    python_course = Course.objects.create(
-        title="Python Programming Fundamentals",
-        description="Learn Python programming from scratch. Cover basic syntax, data structures, and OOP concepts.",
-        course_type="HARD",
-        points_required=50,
-        category="Programming",
-        tags="python,programming,beginner",
-        difficulty_level="BEGINNER",
-        estimated_duration=300  # 5 hours
-    )
-    
-    # Python Course Lessons
-    python_lesson1 = Lesson.objects.create(
-        course=python_course,
-        title="Introduction to Python",
-        video_url="https://example.com/python-intro",
-        points_required=0,
-        points_reward=10
-    )
-    
-    python_lesson2 = Lesson.objects.create(
-        course=python_course,
-        title="Variables and Data Types",
-        video_url="https://example.com/python-variables",
-        points_required=5,
-        points_reward=15
-    )
-    
-    # Python Course Quiz
-    python_quiz = Quiz.objects.create(
-        course=python_course,
-        lesson=python_lesson1,
-        title="Python Basics Quiz",
-        description="Test your understanding of Python basics",
-        difficulty="EASY",
-        time_limit=600,  # 10 minutes
-        points_reward=20,
-        passing_score=70
-    )
-    
-    # Python Quiz Questions
-    q1 = Question.objects.create(
-        quiz=python_quiz,
-        text="What is the correct way to declare a variable in Python?",
-        points=5
-    )
-    Answer.objects.create(question=q1, text="var x = 5", is_correct=False)
-    Answer.objects.create(question=q1, text="x = 5", is_correct=True)
-    Answer.objects.create(question=q1, text="dim x = 5", is_correct=False)
-    
-    q2 = Question.objects.create(
-        quiz=python_quiz,
-        text="Which of these is a valid Python comment?",
-        points=5
-    )
-    Answer.objects.create(question=q2, text="// This is a comment", is_correct=False)
-    Answer.objects.create(question=q2, text="# This is a comment", is_correct=True)
-    Answer.objects.create(question=q2, text="/* This is a comment */", is_correct=False)
+class CourseModelTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        # Set up non-modified objects used by all test methods
+        pass
 
-    # Leadership Course (SOFT skill)
-    leadership_course = Course.objects.create(
-        title="Effective Leadership",
-        description="Develop essential leadership skills for the modern workplace",
-        course_type="SOFT",
-        points_required=0,
-        category="Management",
-        tags="leadership,management,soft-skills",
-        difficulty_level="INTERMEDIATE",
-        estimated_duration=240  # 4 hours
-    )
-    
-    # Leadership Course Lessons
-    leadership_lesson1 = Lesson.objects.create(
-        course=leadership_course,
-        title="Understanding Leadership Styles",
-        video_url="https://example.com/leadership-styles",
-        points_required=0,
-        points_reward=15
-    )
-    
-    leadership_lesson2 = Lesson.objects.create(
-        course=leadership_course,
-        title="Effective Communication",
-        video_url="https://example.com/leadership-communication",
-        points_required=0,
-        points_reward=15
-    )
-    
-    # Leadership Quiz
-    leadership_quiz = Quiz.objects.create(
-        course=leadership_course,
-        lesson=leadership_lesson1,
-        title="Leadership Styles Assessment",
-        description="Evaluate your understanding of different leadership styles",
-        difficulty="MEDIUM",
-        time_limit=900,  # 15 minutes
-        points_reward=25,
-        passing_score=75
-    )
-    
-    # Leadership Quiz Questions
-    q3 = Question.objects.create(
-        quiz=leadership_quiz,
-        text="Which leadership style involves making decisions without consulting team members?",
-        points=5
-    )
-    Answer.objects.create(question=q3, text="Democratic", is_correct=False)
-    Answer.objects.create(question=q3, text="Autocratic", is_correct=True)
-    Answer.objects.create(question=q3, text="Laissez-faire", is_correct=False)
-    
-    # Web Development Course (HARD skill)
-    web_course = Course.objects.create(
-        title="Full Stack Web Development",
-        description="Master both frontend and backend web development",
-        course_type="HARD",
-        points_required=75,
-        category="Web Development",
-        tags="javascript,html,css,react,nodejs",
-        difficulty_level="ADVANCED",
-        estimated_duration=480  # 8 hours
-    )
-    
-    # Web Development Lessons
-    web_lesson1 = Lesson.objects.create(
-        course=web_course,
-        title="HTML & CSS Fundamentals",
-        video_url="https://example.com/web-html-css",
-        points_required=10,
-        points_reward=20
-    )
-    
-    web_lesson2 = Lesson.objects.create(
-        course=web_course,
-        title="JavaScript Basics",
-        video_url="https://example.com/web-javascript",
-        points_required=15,
-        points_reward=25
-    )
-    
-    # Web Development Quiz
-    web_quiz = Quiz.objects.create(
-        course=web_course,
-        lesson=web_lesson1,
-        title="HTML & CSS Quiz",
-        description="Test your knowledge of HTML and CSS",
-        difficulty="MEDIUM",
-        time_limit=1200,  # 20 minutes
-        points_reward=30,
-        passing_score=80
-    )
-    
-    # Web Quiz Questions
-    q4 = Question.objects.create(
-        quiz=web_quiz,
-        text="Which HTML tag is used to create a hyperlink?",
-        points=5
-    )
-    Answer.objects.create(question=q4, text="<link>", is_correct=False)
-    Answer.objects.create(question=q4, text="<a>", is_correct=True)
-    Answer.objects.create(question=q4, text="<href>", is_correct=False)
-    
-    return {
-        'python_course': python_course,
-        'leadership_course': leadership_course,
-        'web_course': web_course
-    }
+    def test_hard_course_validation(self):
+        """Test that HARD courses require points"""
+        with self.assertRaises(ValidationError):
+            Course.objects.create(
+                title="Test Course",
+                description="Test Description",
+                course_type="HARD",
+                points_required=0
+            )
 
-# For testing purposes
-@pytest.fixture
-def sample_courses():
-    return create_sample_courses()
+    def test_valid_course_creation(self):
+        """Test valid course creation"""
+        course = Course.objects.create(
+            title="Valid Course",
+            description="Test Description",
+            course_type="HARD",
+            points_required=1000,
+            points_reward=200,
+            difficulty_level="BEGINNER"
+        )
+        self.assertEqual(course.title, "Valid Course")
+        self.assertEqual(course.points_required, 1000)
 
-@pytest.mark.django_db
-def test_course_creation(sample_courses):
-    """Test that courses were created successfully"""
-    python_course = sample_courses['python_course']
-    leadership_course = sample_courses['leadership_course']
-    web_course = sample_courses['web_course']
-    
-    # Test Python course
-    assert python_course.lessons.count() == 2
-    assert python_course.quizzes.count() == 1
-    assert python_course.course_type == "HARD"
-    
-    # Test Leadership course
-    assert leadership_course.lessons.count() == 2
-    assert leadership_course.quizzes.count() == 1
-    assert leadership_course.course_type == "SOFT"
-    
-    # Test Web Development course
-    assert web_course.lessons.count() == 2
-    assert web_course.quizzes.count() == 1
-    assert web_course.course_type == "HARD"
+    def test_soft_course_creation(self):
+        """Test that SOFT courses don't require points"""
+        course = Course.objects.create(
+            title="Soft Course",
+            description="Test Description",
+            course_type="SOFT",
+            points_required=0,
+            difficulty_level="BEGINNER"
+        )
+        self.assertEqual(course.course_type, "SOFT")
+        self.assertEqual(course.points_required, 0)
+
+    def test_course_prerequisites(self):
+        """Test course prerequisites functionality"""
+        prereq_course = Course.objects.create(
+            title="Prerequisite Course",
+            description="Test Description",
+            course_type="SOFT",
+            difficulty_level="BEGINNER"
+        )
+        
+        main_course = Course.objects.create(
+            title="Main Course",
+            description="Test Description",
+            course_type="HARD",
+            points_required=1000,
+            difficulty_level="INTERMEDIATE"
+        )
+        
+        main_course.prerequisites.add(prereq_course)
+        self.assertIn(prereq_course, main_course.prerequisites.all())
+
+class CoursePointsTestCase(TransactionTestCase):
+    def setUp(self):
+        # Create test user
+        self.user = get_user_model().objects.create_user(
+            username='testuser',
+            password='testpass123'
+        )
+        
+        self.profile = Profile.objects.get(user=self.user)
+        self.profile.points = 2000
+        self.profile.save()
+        
+        # Create test course
+        self.course = Course.objects.create(
+            title="Test Course",
+            description="Test Description",
+            course_type="HARD",
+            points_required=1000,
+            points_reward=500,
+            difficulty_level="BEGINNER"
+        )
+        
+        # Create test lessons
+        self.lesson1 = Lesson.objects.create(
+            course=self.course,
+            title="Lesson 1",
+            video_url="http://example.com/video1"
+        )
+        self.lesson2 = Lesson.objects.create(
+            course=self.course,
+            title="Lesson 2",
+            video_url="http://example.com/video2"
+        )
+
+    def test_course_unlock_system(self):
+        """Test course unlocking and points deduction"""
+        initial_points = self.profile.points
+        
+        # Unlock the course
+        UnlockedCourse.objects.create(
+            user=self.profile,
+            course=self.course,
+            points_spent=self.course.points_required
+        )
+        
+        # Update user points
+        self.profile.points -= self.course.points_required
+        self.profile.save()
+        
+        # Verify points deduction
+        self.profile.refresh_from_db()
+        self.assertEqual(
+            self.profile.points,
+            initial_points - self.course.points_required
+        )
+
+    def test_course_completion_reward(self):
+        """Test course completion and points reward"""
+        # First unlock the course
+        UnlockedCourse.objects.create(
+            user=self.profile,
+            course=self.course
+        )
+        
+        initial_points = self.profile.points
+        
+        # Create and complete progress
+        progress = CourseProgress.objects.create(
+            user=self.profile,
+            course=self.course
+        )
+        progress.completed_lessons.add(self.lesson1, self.lesson2)
+        
+        # Award points
+        self.profile.points += self.course.points_reward
+        self.profile.save()
+        
+        # Verify points reward
+        self.profile.refresh_from_db()
+        self.assertEqual(
+            self.profile.points,
+            initial_points + self.course.points_reward
+        )

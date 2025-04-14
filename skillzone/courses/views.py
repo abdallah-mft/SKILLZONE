@@ -213,7 +213,7 @@ def unlock_course(request, course_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def mark_lesson_complete(request, lesson_id):
-    """Mark a lesson as completed"""
+    """Mark a lesson as completed and check for course completion"""
     try:
         lesson = get_object_or_404(Lesson, id=lesson_id)
         user_profile = request.user.profile
@@ -237,17 +237,25 @@ def mark_lesson_complete(request, lesson_id):
         progress.last_activity = timezone.now()
         progress.save()
         
-        # Award points for completion
-        if lesson.points_reward > 0:
-            user_profile.points += lesson.points_reward
+        # Check if course is completed
+        total_lessons = lesson.course.lessons.count()
+        completed_lessons = progress.completed_lessons.count()
+        course_completed = total_lessons == completed_lessons
+        
+        points_earned = 0
+        if course_completed:
+            # Award points only when the course is fully completed
+            points_earned = lesson.course.points_reward
+            user_profile.points += points_earned
             user_profile.save()
         
         return Response({
             "success": True,
-            "message": "Lesson marked as completed",
+            "message": "Lesson marked as completed" + (" and course completed!" if course_completed else ""),
             "data": {
                 "course_progress": progress.completion_percentage,
-                "points_earned": lesson.points_reward,
+                "course_completed": course_completed,
+                "points_earned": points_earned,
                 "total_points": user_profile.points
             }
         })

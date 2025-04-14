@@ -11,6 +11,7 @@ class Course(models.Model):
     description = models.TextField()
     course_type = models.CharField(max_length=4, choices=COURSE_TYPES)
     points_required = models.IntegerField(default=0)
+    points_reward = models.IntegerField(default=0)
     prerequisites = models.ManyToManyField('self', blank=True, symmetrical=False)
     category = models.CharField(max_length=50, blank=True)
     tags = models.CharField(max_length=255, blank=True)
@@ -43,7 +44,7 @@ class Lesson(models.Model):
     title = models.CharField(max_length=255)
     video_url = models.URLField()
     points_required = models.IntegerField(default=0)
-    points_reward = models.IntegerField(default=0)
+    # Remove points_reward field
 
     def __str__(self):
         return self.title

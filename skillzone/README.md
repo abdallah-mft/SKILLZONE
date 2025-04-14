@@ -110,10 +110,9 @@ A modern learning platform built with Django REST Framework and React, offering 
 ## 🔍 API Documentation
 
 ### Authentication Endpoints
-
 #### Register User
 ```http
-POST /api/users/register/
+POST /api/v1/users/register/
 ```
 Request Body:
 ```json
@@ -127,7 +126,7 @@ Request Body:
 
 #### Login
 ```http
-POST /api/users/login/
+POST /api/v1/users/login/
 ```
 Response:
 ```json
@@ -142,24 +141,24 @@ Response:
 
 #### Refresh Token
 ```http
-POST /api/token/refresh/
+POST /api/v1/token/refresh/
 ```
 
 ### User Endpoints
 
 #### Get Profile
 ```http
-GET /api/users/profile/
+GET /api/v1/users/profile/
 ```
 
 #### Update Points
 ```http
-POST /api/users/update-points/
+POST /api/v1/users/update-points/
 ```
 
 #### Update Device Token
 ```http
-POST /api/users/update-device-token/
+POST /api/v1/users/update-device-token/
 ```
 
 ### Course Endpoints

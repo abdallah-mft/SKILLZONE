@@ -4,7 +4,7 @@ from .models import Course, Lesson, UnlockedCourse, CourseProgress
 class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
-        fields = ('id', 'title', 'video_url', 'points_required', 'points_reward')
+        fields = ('id', 'title', 'video_url', 'points_required')  # Removed points_reward
 
 class CourseSerializer(serializers.ModelSerializer):
     lessons = LessonSerializer(many=True, read_only=True)

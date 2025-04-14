@@ -53,6 +53,7 @@ class UnlockedLesson(models.Model):
     user = models.ForeignKey('users.Profile', on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     unlocked_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ['user', 'lesson']

@@ -153,7 +153,7 @@ def unlock_lesson(request, lesson_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def unlock_course(request, course_id):
-    """Unlock a HARD skill course by spending points"""
+    """Unlock a HARD skill course and all its lessons by spending points"""
     try:
         course = get_object_or_404(Course, id=course_id)
         user_profile = request.user.profile
@@ -174,7 +174,7 @@ def unlock_course(request, course_id):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # If points are required, check if user has enough
+        # Check points only if required
         if course.points_required > 0:
             if user_profile.points < course.points_required:
                 return Response({
@@ -183,23 +183,33 @@ def unlock_course(request, course_id):
                     "data": None
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Deduct points only if points are required
+            # Deduct points
             user_profile.points -= course.points_required
             user_profile.save()
 
+        # Create course unlock record
         UnlockedCourse.objects.create(
             user=user_profile,
             course=course,
             points_spent=course.points_required
         )
 
+        # Automatically unlock all lessons in the course
+        lessons = course.lessons.all()
+        for lesson in lessons:
+            UnlockedLesson.objects.get_or_create(
+                user=user_profile,
+                lesson=lesson
+            )
+
         return Response({
             "success": True,
-            "message": "Course unlocked successfully",
+            "message": "Course and all lessons unlocked successfully",
             "data": {
                 "remaining_points": user_profile.points,
                 "course_id": course.id,
-                "points_spent": course.points_required
+                "points_spent": course.points_required,
+                "lessons_unlocked": lessons.count()
             }
         })
 
@@ -213,52 +223,39 @@ def unlock_course(request, course_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def mark_lesson_complete(request, lesson_id):
-    """Mark a lesson as completed and check for course completion"""
+    """Mark a lesson as completed"""
     try:
         lesson = get_object_or_404(Lesson, id=lesson_id)
         user_profile = request.user.profile
         
         # Check if lesson is unlocked
-        if not UnlockedLesson.objects.filter(user=user_profile, lesson=lesson).exists():
+        unlocked_lesson = UnlockedLesson.objects.filter(
+            user=user_profile, 
+            lesson=lesson
+        ).first()
+        
+        if not unlocked_lesson:
             return Response({
                 "success": False,
                 "message": "Lesson not unlocked",
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Get or create course progress
-        progress, _ = CourseProgress.objects.get_or_create(
-            user=user_profile,
-            course=lesson.course
-        )
-        
-        # Mark lesson as completed
-        progress.completed_lessons.add(lesson)
-        progress.last_activity = timezone.now()
-        progress.save()
-        
-        # Check if course is completed
-        total_lessons = lesson.course.lessons.count()
-        completed_lessons = progress.completed_lessons.count()
-        course_completed = total_lessons == completed_lessons
-        
-        points_earned = 0
-        if course_completed:
-            # Award points only when the course is fully completed
-            points_earned = lesson.course.points_reward
-            user_profile.points += points_earned
-            user_profile.save()
+        # Add completed_at timestamp to UnlockedLesson
+        if not unlocked_lesson.completed_at:
+            unlocked_lesson.completed_at = timezone.now()
+            unlocked_lesson.save()
         
         return Response({
             "success": True,
-            "message": "Lesson marked as completed" + (" and course completed!" if course_completed else ""),
+            "message": "Lesson marked as completed",
             "data": {
-                "course_progress": progress.completion_percentage,
-                "course_completed": course_completed,
-                "points_earned": points_earned,
-                "total_points": user_profile.points
+                "lesson_id": lesson.id,
+                "course_id": lesson.course.id,
+                "completed_at": unlocked_lesson.completed_at
             }
         })
+        
     except Exception as e:
         return Response({
             "success": False,

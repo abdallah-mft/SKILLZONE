@@ -20,6 +20,7 @@ urlpatterns = [
     path('', test_view, name='test'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('admin/', admin.site.urls),
+    path('api/users/', include('users.urls')),  # Make sure this exists
     path('api/v1/', include([
         path('users/', include('users.urls')),
         path('courses/', include('courses.urls')),

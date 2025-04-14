@@ -478,42 +478,52 @@ def update_avatar(request):
 @permission_classes([AllowAny])
 def verify_email(request):
     """Verify email with 4-digit code"""
-    code = request.data.get('code', '').strip().upper()
-    email = request.data.get('email', '').strip().lower()
-    
-    if not code or not email:
-        return Response({
-            'success': False,
-            'message': 'Both email and verification code are required'
-        }, status=status.HTTP_400_BAD_REQUEST)
-
     try:
-        user = User.objects.get(email=email)
-        profile = user.profile
+        code = request.data.get('code', '').strip().upper()
+        email = request.data.get('email', '').strip().lower()
         
-        if profile.email_verified:
+        logger.debug(f"Verification attempt - Email: {email}, Code: {code}")
+        
+        if not code or not email:
             return Response({
                 'success': False,
-                'message': 'Email is already verified'
+                'message': 'Both email and verification code are required'
             }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+            profile = user.profile
             
-        if not profile.is_verification_code_valid(code):
+            if profile.email_verified:
+                return Response({
+                    'success': False,
+                    'message': 'Email is already verified'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+            if not profile.is_verification_code_valid(code):
+                return Response({
+                    'success': False,
+                    'message': 'Invalid or expired verification code'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+            profile.verify_email()
+            return Response({
+                'success': True,
+                'message': 'Email verified successfully'
+            })
+                
+        except User.DoesNotExist:
             return Response({
                 'success': False,
-                'message': 'Invalid or expired verification code'
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'message': 'User not found'
+            }, status=status.HTTP_404_NOT_FOUND)
             
-        profile.verify_email()
-        return Response({
-            'success': True,
-            'message': 'Email verified successfully'
-        })
-            
-    except User.DoesNotExist:
+    except Exception as e:
+        logger.error(f"Error in verify_email: {str(e)}", exc_info=True)
         return Response({
             'success': False,
-            'message': 'User not found'
-        }, status=status.HTTP_404_NOT_FOUND)
+            'message': f'Server error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

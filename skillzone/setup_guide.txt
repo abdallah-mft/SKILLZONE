@@ -127,14 +127,15 @@ SIMPLE_JWT = {
 7️⃣ API ENDPOINTS
 -------------------------------------------
 Authentication:
-- POST /api/users/register/
-- POST /api/users/login/
-- POST /api/token/refresh/
+- POST /api/v1/users/register/
+- POST /api/v1/users/login/
+- POST /api/v1/token/refresh/
 
 Users:
-- GET  /api/users/profile/
-- POST /api/users/update-points/
-- POST /api/users/update-device-token/
+- GET  /api/v1/users/profile/
+- POST /api/v1/users/update-points/
+- POST /api/v1/users/update-device-token/
+- POST /api/v1/users/verify-email/
 
 Courses:
 - GET  /api/v1/courses/

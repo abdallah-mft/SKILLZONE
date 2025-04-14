@@ -37,7 +37,7 @@ A modern learning platform built with Django REST Framework and React, offering 
 ## 🛠️ Technical Stack
 
 ### Backend
-- Django 4.x
+- Django 5.x
 - Django REST Framework
 - SQLite (Development) / PostgreSQL (Production)
 - JWT Authentication
@@ -376,21 +376,7 @@ Common HTTP Status Codes:
 python manage.py test
 ```
 
-## 🤝 Contributing
 
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 👥 Authors
-
-- Your Name - Initial work - [YourGithub](https://github.com/yourusername)
 
 ## 🙏 Acknowledgments
 

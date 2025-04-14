@@ -18,9 +18,14 @@ source venv/bin/activate
 # Core packages
 pip install django
 pip install djangorestframework
+pip install djangorestframework-simplejwt
 pip install django-cors-headers
 pip install firebase-admin
 pip install django-cache-memoize
+pip install python-dotenv
+pip install dj-database-url
+pip install whitenoise
+pip install redis
 
 # Create requirements.txt
 pip freeze > requirements.txt
@@ -36,32 +41,55 @@ django-admin startproject skillzone
 # Create apps
 python manage.py startapp users
 python manage.py startapp courses
+python manage.py startapp quizzes
+python manage.py startapp achievements
 
 # Database setup
 python manage.py makemigrations
 python manage.py migrate
 python manage.py createsuperuser
 
-4️⃣ RUN DEVELOPMENT SERVER
+4️⃣ ENVIRONMENT SETUP
 -------------------------------------------
-python manage.py runserver
+# Create .env file (copy from .env.example)
+DEBUG=True
+SECRET_KEY=your-secret-key-here
+ALLOWED_HOSTS=localhost,127.0.0.1
+DATABASE_URL=sqlite:///db.sqlite3
+REDIS_URL=redis://127.0.0.1:6379/1
 
-5️⃣ API ENDPOINTS
+5️⃣ FLUTTER FRONTEND SETUP
 -------------------------------------------
-Users:
-- POST /api/users/register/
-- POST /api/users/login/
-- GET  /api/users/profile/
-- POST /api/users/update-points/
-- POST /api/users/update-device-token/
+1. Install Flutter SDK
+2. Configure Android Studio/VS Code
+3. Install required Flutter packages:
+   ```yaml
+   dependencies:
+     flutter:
+       sdk: flutter
+     http: ^1.1.0
+     shared_preferences: ^2.2.0
+     provider: ^6.0.5
+     firebase_messaging: ^14.6.5
+     flutter_secure_storage: ^8.0.0
+   ```
 
-Courses:
-- GET  /api/courses/
-- GET  /api/courses/<id>/
-
-6️⃣ FLUTTER FRONTEND REQUIREMENTS
+6️⃣ CORS & JWT CONFIGURATION
 -------------------------------------------
-# CORS Headers (add to settings.py)
+# Add to settings.py
+INSTALLED_APPS = [
+    ...
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
+]
+
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    ...
+]
+
+# CORS Settings
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
@@ -76,33 +104,95 @@ CORS_ALLOW_METHODS = [
     "PUT",
 ]
 
-7️⃣ PRODUCTION DEPLOYMENT
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
+# JWT Settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+
+7️⃣ API ENDPOINTS
 -------------------------------------------
-# Collect static files
+Authentication:
+- POST /api/users/register/
+- POST /api/users/login/
+- POST /api/token/refresh/
+
+Users:
+- GET  /api/users/profile/
+- POST /api/users/update-points/
+- POST /api/users/update-device-token/
+
+Courses:
+- GET  /api/v1/courses/
+- GET  /api/v1/courses/<id>/
+- POST /api/v1/courses/<id>/unlock/
+- GET  /api/v1/courses/<id>/statistics/
+
+Quizzes:
+- GET  /api/v1/quizzes/<course_id>/
+- GET  /api/v1/quizzes/<id>/
+- POST /api/v1/quizzes/<id>/attempt/
+- POST /api/v1/quizzes/<id>/submit/
+
+Achievements:
+- GET  /api/v1/achievements/
+- GET  /api/v1/achievements/my_achievements/
+- GET  /api/v1/achievements/available/
+
+8️⃣ DEVELOPMENT SERVER
+-------------------------------------------
+# Run Django server
+python manage.py runserver
+
+# Run Flutter (separate terminal)
+flutter run
+
+9️⃣ PRODUCTION DEPLOYMENT
+-------------------------------------------
+# Django Setup
 python manage.py collectstatic
+python manage.py check --deploy
 
-# Set environment variables
+# Environment Variables
 DEBUG=False
-SECRET_KEY=your-secret-key
+SECRET_KEY=your-production-secret-key
 ALLOWED_HOSTS=your-domain.com
+DATABASE_URL=your-database-url
+REDIS_URL=your-redis-url
 
-8️⃣ USEFUL COMMANDS
+# Flutter Build
+flutter build apk --release  # Android
+flutter build ios --release  # iOS
+
+🔟 USEFUL COMMANDS
 -------------------------------------------
-# Make migrations for specific app
-python manage.py makemigrations users
-python manage.py makemigrations courses
-
-# Show migrations status
+# Django Commands
+python manage.py makemigrations
+python manage.py migrate
 python manage.py showmigrations
-
-# Shell
 python manage.py shell
-
-# Clear cache
 python manage.py clearcache
-
-# Run tests
 python manage.py test
+
+# Flutter Commands
+flutter clean
+flutter pub get
+flutter test
+flutter analyze
 
 ===========================================
 📝 NOTES
@@ -110,24 +200,41 @@ python manage.py test
 1. Always activate virtual environment before running commands
 2. Keep requirements.txt updated when adding new packages
 3. Never commit sensitive data (SECRET_KEY, passwords, etc.)
-4. Use environment variables for sensitive data in production
+4. Use environment variables for sensitive data
 5. Regular database backups recommended
+6. Keep Flutter dependencies up to date
+7. Test on both iOS and Android before deployment
 
 ===========================================
 🔧 TROUBLESHOOTING
 -------------------------------------------
-1. Migration issues:
-   - Delete all migrations files (except __init__.py)
-   - Delete db.sqlite3
-   - Run makemigrations and migrate again
+1. Django Issues:
+   - Migration issues:
+     * Delete migrations (except __init__.py)
+     * Delete db.sqlite3
+     * Run makemigrations and migrate
+   - CORS issues:
+     * Check CORS settings
+     * Verify allowed origins
+   - Package conflicts:
+     * Delete venv
+     * Create new venv
+     * Reinstall requirements
 
-2. CORS issues:
-   - Check CORS settings in settings.py
-   - Verify allowed origins
+2. Flutter Issues:
+   - Build errors:
+     * flutter clean
+     * flutter pub get
+   - Hot reload not working:
+     * Stop app
+     * flutter run
+   - Package conflicts:
+     * Delete pubspec.lock
+     * flutter pub get
 
-3. Package conflicts:
-   - Delete venv
-   - Create new venv
-   - Reinstall requirements
+3. Authentication Issues:
+   - Clear tokens in Flutter secure storage
+   - Check JWT settings in Django
+   - Verify CORS headers
 
 ===========================================

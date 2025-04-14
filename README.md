@@ -1,270 +1,400 @@
-# Skillzone
+# 🎓 SkillZone Learning Platform
 
-## Database Setup
+A modern learning platform built with Django REST Framework and React, offering both free (SOFT) and premium (HARD) courses with integrated achievements, quizzes, and user progression system.
 
-The project supports both SQLite and PostgreSQL:
+## 🚀 Features
 
-### SQLite (Default)
-No additional setup required. The project will use SQLite by default.
+### Course System
+- Two course types: SOFT (free) and HARD (premium)
+- Video-based lessons
+- Progress tracking
+- Course completion statistics
+- Points-based reward system
+- Course categories and tags
+- Difficulty levels (BEGINNER, INTERMEDIATE, ADVANCED)
 
-### PostgreSQL
-1. Install PostgreSQL and pgAdmin
-2. Copy `.env.example` to `.env`
-3. Set `USE_POSTGRES=True` in `.env`
-4. Update database credentials in `.env`
-5. Run migrations:
-   ```bash
-   python manage.py migrate
+### Quiz System
+- Course-specific quizzes
+- Time-limited attempts
+- Score tracking
+- Achievement integration
+- Progress statistics
+
+### Achievement System
+- Unlockable achievements
+- Progress tracking
+- Reward points
+- Achievement categories
+
+### User System
+- Custom user profiles
+- Points accumulation
+- Course unlocking mechanism
+- Progress tracking
+- JWT Authentication
+- Device token management
+
+## 🛠️ Technical Stack
+
+### Backend
+- Django 4.x
+- Django REST Framework
+- SQLite (Development) / PostgreSQL (Production)
+- JWT Authentication
+- Redis Cache
+- CORS support
+
+### Frontend (Flutter)
+- Flutter SDK
+- State Management
+- HTTP/REST Client for API integration
+- JWT Token handling
+- Device Token Management for Notifications
+- Responsive UI components
+- Offline data persistence
+- Cross-platform support (iOS/Android)
+
+### Frontend Setup Requirements
+1. Flutter SDK installation
+2. Configure CORS in Django for Flutter:
+   ```python
+   # For development
+   CORS_ALLOW_ALL_ORIGINS = True
+   CORS_ALLOW_CREDENTIALS = True
+
+   # For production
+   CORS_ALLOWED_ORIGINS = [
+       "https://skillzone-2vs6.onrender.com",
+       # Add your Flutter app domain
+   ]
+
+   CORS_ALLOW_METHODS = [
+       "DELETE",
+       "GET",
+       "OPTIONS",
+       "PATCH",
+       "POST",
+       "PUT",
+   ]
+
+   CORS_ALLOW_HEADERS = [
+       "accept",
+       "accept-encoding",
+       "authorization",
+       "content-type",
+       "dnt",
+       "origin",
+       "user-agent",
+       "x-csrftoken",
+       "x-requested-with",
+   ]
    ```
 
-## Project Structure
-```bash
-skillzone/
-├── skillzone/          # Project Settings
-├── users/             # User Authentication & Profiles
-├── courses/           # Course Management
-├── quizzes/           # Quiz System
-├── achievements/      # Achievement System
-└── manage.py         # Django CLI
+3. JWT Token Configuration:
+   ```python
+   SIMPLE_JWT = {
+       'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+       'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+       'ROTATE_REFRESH_TOKENS': True,
+       'BLACKLIST_AFTER_ROTATION': True,
+   }
+   ```
+
+## 📋 Prerequisites
+
+- Python 3.8+
+- pip
+- virtualenv
+- Git
+
+## 🔍 API Documentation
+
+### Authentication Endpoints
+
+#### Register User
+```http
+POST /api/users/register/
 ```
-
-## Setup Instructions
-1. Create virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   venv\Scripts\activate     # Windows
-   ```
-
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Run migrations:
-   ```bash
-   python manage.py migrate
-   ```
-
-4. Start development server:
-   ```bash
-   python manage.py runserver
-   ```
-
-## API Endpoints
-- Users: `/api/users/`
-- Courses: `/api/courses/`
-- Quizzes: `/api/quizzes/`
-- Achievements: `/api/achievements/`
-
-# SKILLZONE API DOCUMENTATION
-
-## Base URL
-```
-https://skillzone-4ewv.onrender.com/api/v1
-```
-
-## Authentication
-- Type: JWT (JSON Web Token)
-- Headers: `Authorization: Bearer <access_token>`
-
-## API Endpoints
-
-### 1. Authentication Endpoints
-
-#### 1.1 Register
-- **URL**: `/users/register/`
-- **Method**: POST
-- **Body**:
+Request Body:
 ```json
 {
+    "username": "string",
     "email": "user@example.com",
-    "username": "username",
-    "password": "password",
-    "first_name": "First",
-    "last_name": "Last"
+    "password": "string",
+    "accept_terms": true
 }
 ```
-- **Response**:
+
+#### Login
+```http
+POST /api/users/login/
+```
+Response:
 ```json
 {
     "success": true,
-    "message": "Registration successful. Please check your email to verify your account.",
     "data": {
-        "tokens": {
-            "access": "access_token_here",
-            "refresh": "refresh_token_here"
+        "access": "JWT_TOKEN",
+        "refresh": "REFRESH_TOKEN"
+    }
+}
+```
+
+#### Refresh Token
+```http
+POST /api/token/refresh/
+```
+
+### User Endpoints
+
+#### Get Profile
+```http
+GET /api/users/profile/
+```
+
+#### Update Points
+```http
+POST /api/users/update-points/
+```
+
+#### Update Device Token
+```http
+POST /api/users/update-device-token/
+```
+
+### Course Endpoints
+
+#### List Courses
+```http
+GET /api/v1/courses/
+```
+Query Parameters:
+- `category`: Filter by category
+- `difficulty`: BEGINNER, INTERMEDIATE, ADVANCED
+- `type`: SOFT, HARD
+- `search`: Search in title and description
+- `page`: Page number
+- `per_page`: Items per page
+
+Response:
+```json
+{
+    "success": true,
+    "data": {
+        "courses": [...],
+        "pagination": {
+            "total": 100,
+            "page": 1,
+            "per_page": 10,
+            "total_pages": 10
         },
-        "user": {
-            "user": {
-                "id": 1,
-                "username": "username",
-                "email": "user@example.com",
-                "first_name": "First",
-                "last_name": "Last"
-            },
-            "points": 0,
-            "full_name": "First Last",
-            "level": null,
-            "next_level": null,
-            "points_to_next_level": null
+        "user_points": 500,
+        "filters": {
+            "categories": [...],
+            "tags": [...],
+            "difficulties": [...],
+            "types": [...]
         }
     }
 }
 ```
 
-#### 1.2 Login
-- **URL**: `/users/login/`
-- **Method**: POST
-- **Body**:
-```json
-{
-    "email": "user@example.com",  // Can use email or username
-    "password": "password"
-}
+#### Get Course Details
+```http
+GET /api/v1/courses/<id>/
 ```
-- **Response**:
+
+#### Unlock Course
+```http
+POST /api/v1/courses/<id>/unlock/
+```
+
+#### Get Course Statistics
+```http
+GET /api/v1/courses/<id>/statistics/
+```
+Response:
 ```json
 {
     "success": true,
-    "message": "Login successful",
     "data": {
-        "tokens": {
-            "access": "access_token_here",
-            "refresh": "refresh_token_here"
+        "user_stats": {
+            "completion_percentage": 75,
+            "time_spent_minutes": 120,
+            "completed_lessons": 15,
+            "completed_quizzes": 3,
+            "points_earned": 500
         },
-        "user": {
-            // Same user object as register response
+        "course_stats": {
+            "total_students": 1000,
+            "completion_rate": 68,
+            "quiz_scores": {...}
         }
     }
 }
 ```
 
-#### 1.3 Logout
-- **URL**: `/users/logout/`
-- **Method**: POST
-- **Auth**: Required
-- **Body**:
-```json
-{
-    "refresh_token": "refresh_token_here"
-}
+### Lesson Endpoints
+
+#### Unlock Lesson
+```http
+POST /api/v1/courses/lessons/<id>/unlock/
 ```
 
-#### 1.4 Refresh Token
-- **URL**: `/api/token/refresh/`
-- **Method**: POST
-- **Body**:
-```json
-{
-    "refresh": "refresh_token_here"
-}
+#### Complete Lesson
+```http
+POST /api/v1/courses/lessons/<id>/complete/
 ```
 
-#### 1.5 Update Device Token
-- **URL**: `/users/update-device-token/`
-- **Method**: POST
-- **Auth**: Required
-- **Body**:
-```json
-{
-    "device_token": "firebase_device_token"
-}
+### Quiz Endpoints
+
+#### List Course Quizzes
+```http
+GET /api/v1/quizzes/<course_id>/
 ```
 
-### 2. Profile Endpoints
-
-#### 2.1 Get Profile
-- **URL**: `/users/profile/`
-- **Method**: GET
-- **Auth**: Required
-
-#### 2.2 Update Profile
-- **URL**: `/users/profile/update/`
-- **Method**: POST
-- **Auth**: Required
-- **Body**: FormData (multipart/form-data)
-```json
-{
-    "first_name": "New First",
-    "last_name": "New Last",
-    "bio": "New bio",
-    "avatar": "file_upload"
-}
+#### Get Quiz Details
+```http
+GET /api/v1/quizzes/<id>/
 ```
 
-#### 2.3 Update Points
-- **URL**: `/users/update-points/`
-- **Method**: POST
-- **Auth**: Required
-- **Body**:
-```json
-{
-    "points": 100
-}
+#### Start Quiz Attempt
+```http
+POST /api/v1/quizzes/<id>/attempt/
 ```
 
-### 3. Password Management
-
-#### 3.1 Request Password Reset
-- **URL**: `/users/password-reset/`
-- **Method**: POST
-- **Body**:
-```json
-{
-    "email": "user@example.com"
-}
+#### Submit Quiz
+```http
+POST /api/v1/quizzes/<id>/submit/
 ```
 
-#### 3.2 Change Password
-- **URL**: `/users/profile/change-password/`
-- **Method**: POST
-- **Auth**: Required
-- **Body**:
-```json
-{
-    "old_password": "old_password",
-    "new_password": "new_password"
-}
+### Achievement Endpoints
+
+#### List Achievements
+```http
+GET /api/v1/achievements/
 ```
 
-## Important Implementation Notes
+#### My Achievements
+```http
+GET /api/v1/achievements/my_achievements/
+```
 
-### 1. Error Handling
+#### Available Achievements
+```http
+GET /api/v1/achievements/available/
+```
+
+## 🔐 Authentication
+
+The API uses JWT authentication. Include the token in all requests:
+```http
+Authorization: Bearer <your_token>
+```
+
+## 🚦 Error Handling
+
 All endpoints return consistent error format:
 ```json
 {
     "success": false,
-    "message": "Error message here",
+    "message": "Error description",
     "data": null
 }
 ```
 
-### 2. Authentication Headers
-Add access token to all authenticated requests:
-```dart
-headers: {
-    'Authorization': 'Bearer $accessToken',
-    'Content-Type': 'application/json'
-}
+Common HTTP Status Codes:
+- 200: Success
+- 201: Created
+- 400: Bad Request
+- 401: Unauthorized
+- 403: Forbidden
+- 404: Not Found
+- 500: Server Error
+
+## 🔧 Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/skillzone.git
+   cd skillzone
+   ```
+
+2. **Set up virtual environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Environment Variables**
+   ```env
+   DEBUG=True
+   SECRET_KEY=your-secret-key
+   ALLOWED_HOSTS=localhost,127.0.0.1
+   ```
+
+5. **Database Setup**
+   ```bash
+   python manage.py migrate
+   python manage.py createsuperuser
+   ```
+
+6. **Run Development Server**
+   ```bash
+   python manage.py runserver
+   ```
+
+## 📦 Deployment
+
+1. **Update settings**
+   ```python
+   DEBUG = False
+   ALLOWED_HOSTS = ['your-domain.com']
+   ```
+
+2. **Collect static files**
+   ```bash
+   python manage.py collectstatic
+   ```
+
+3. **Set production environment variables**
+   ```env
+   DEBUG=False
+   SECRET_KEY=your-production-secret-key
+   ALLOWED_HOSTS=your-domain.com
+   DATABASE_URL=your-database-url
+   ```
+
+## 🧪 Running Tests
+
+```bash
+python manage.py test
 ```
 
-### 3. Token Management
-- Store both access and refresh tokens securely
-- Implement token refresh logic when getting 401 errors
-- Use the refresh token endpoint to get new access token
+## 🤝 Contributing
 
-### 4. File Upload Guidelines
-- Use multipart/form-data for avatar uploads
-- Maximum file size: 5MB
-- Supported formats: JPG, PNG, GIF
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
 
-### 5. Rate Limiting
-- API requests are limited to 100 requests per minute per user
-- Exceeding this limit will return a 429 Too Many Requests error
+## 📄 License
 
-### 6. Best Practices
-- Always validate user input before sending to API
-- Implement proper error handling for network issues
-- Cache appropriate responses to minimize API calls
-- Implement proper logout flow by clearing stored tokens
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 👥 Authors
+
+- Your Name - Initial work - [YourGithub](https://github.com/yourusername)
+
+## 🙏 Acknowledgments
+
+- Django REST Framework
+- Simple JWT
+- Bootstrap
+- All contributors

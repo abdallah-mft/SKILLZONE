@@ -74,7 +74,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'skillzone.middleware.DebugRequestMiddleware',  # Keep this for debugging
+    'skillzone.middleware.DebugRequestMiddleware', 
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -222,10 +222,30 @@ if DEBUG:
 
 # JWT Settings
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    # Token lifetimes
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),    
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),     
+    
+    # Security features
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    
+    # Algorithm and keys
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    
+    # Token settings
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    
+    # Token blacklist settings
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
 }
 
 # REST Framework settings

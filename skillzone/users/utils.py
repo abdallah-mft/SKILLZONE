@@ -78,18 +78,16 @@ def send_verification_email(user):
         )
         msg.attach_alternative(html_content, "text/html")
         
-        # Add debug logging
-        print(f"Attempting to send email to {to_email}")
-        print(f"Using SMTP settings: {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
-        print(f"SSL: {settings.EMAIL_USE_SSL}, TLS: {settings.EMAIL_USE_TLS}")
+        if settings.DEBUG:
+            logger.debug(f"Sending verification email to {to_email}")
+            logger.debug(f"SMTP settings: {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
+            logger.debug(f"SSL: {settings.EMAIL_USE_SSL}, TLS: {settings.EMAIL_USE_TLS}")
         
         msg.send(fail_silently=False)
         return True
     except Exception as e:
-        print(f"Detailed error: {str(e)}")
-        import traceback
-        print(traceback.format_exc())
-        raise
+        logger.error(f"Failed to send verification email: {str(e)}")
+        raise ValueError(f"Failed to send verification email: {str(e)}")
 
 def send_password_reset_email(user, reset_url):
     """Send HTML password reset email"""
@@ -109,6 +107,7 @@ def send_password_reset_email(user, reset_url):
     )
     msg.attach_alternative(html_content, "text/html")
     msg.send()
+
 
 
 

@@ -11,6 +11,8 @@ from .serializers import (
     QuizAttemptSerializer
 )
 from django.urls import get_resolver
+from django.db import transaction
+from django.core.cache import cache
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -206,72 +208,61 @@ def award_achievements(attempt):
     quiz = attempt.quiz
     user = attempt.user
     
-    achievements = []
-    
-    # Perfect Score Achievement
-    if attempt.score == 100:
-        achievement, created = QuizAchievement.objects.get_or_create(
-            user=user,
-            quiz=quiz,
-            achievement_type='PERFECT',
-            defaults={'bonus_points': 50}
-        )
-        if created:
-            achievements.append('PERFECT')
-    
-    # Speed Demon Achievement (completed in less than 50% of time limit)
-    time_taken = (attempt.completed_at - attempt.started_at).total_seconds()
-    if time_taken < (quiz.time_limit * 0.5):
-        achievement, created = QuizAchievement.objects.get_or_create(
-            user=user,
-            quiz=quiz,
-            achievement_type='FAST',
-            defaults={'bonus_points': 30}
-        )
-        if created:
-            achievements.append('FAST')
-    
-    # Winning Streak (3 or more consecutive passes)
-    recent_attempts = QuizAttempt.objects.filter(
-        user=user,
-        quiz=quiz,
-        is_passed=True,
-        completed_at__isnull=False
-    ).order_by('-completed_at')[:3]
-    
-    if recent_attempts.count() >= 3:
-        achievement, created = QuizAchievement.objects.get_or_create(
-            user=user,
-            quiz=quiz,
-            achievement_type='STREAK',
-            defaults={'bonus_points': 40}
-        )
-        if created:
-            achievements.append('STREAK')
-    
-    # Quiz Master (achieved all other achievements)
-    if QuizAchievement.objects.filter(user=user, quiz=quiz).count() >= 3:
-        achievement, created = QuizAchievement.objects.get_or_create(
-            user=user,
-            quiz=quiz,
-            achievement_type='MASTER',
-            defaults={'bonus_points': 100}
-        )
-        if created:
-            achievements.append('MASTER')
-    
-    # Award bonus points
-    total_bonus = 0
-    for achievement_type in achievements:
-        achievement = QuizAchievement.objects.get(
-            user=user,
-            quiz=quiz,
-            achievement_type=achievement_type
-        )
-        total_bonus += achievement.bonus_points
-    
-    if total_bonus > 0:
-        user.points += total_bonus
-        user.save()
-    
-    return achievements, total_bonus
+    # Use select_for_update to prevent race conditions
+    with transaction.atomic():
+        profile = Profile.objects.select_for_update().get(user=user)
+        achievements = []
+        total_bonus_points = 0
+        
+        # Perfect Score Achievement
+        if attempt.score == 100:
+            achievement, created = QuizAchievement.objects.get_or_create(
+                user=user,
+                quiz=quiz,
+                achievement_type='PERFECT',
+                defaults={'bonus_points': 50}
+            )
+            if created:
+                achievements.append('PERFECT')
+                total_bonus_points += 50
+        
+        # Speed Demon Achievement
+        time_taken = (attempt.completed_at - attempt.started_at).total_seconds()
+        if time_taken < (quiz.time_limit * 0.5):
+            achievement, created = QuizAchievement.objects.get_or_create(
+                user=user,
+                quiz=quiz,
+                achievement_type='FAST',
+                defaults={'bonus_points': 30}
+            )
+            if created:
+                achievements.append('FAST')
+                total_bonus_points += 30
+        
+        # Winning Streak (using cached query)
+        cache_key = f'quiz_streak_{user.id}_{quiz.id}'
+        streak_count = cache.get(cache_key, 0)
+        
+        if attempt.is_passed:
+            streak_count += 1
+        else:
+            streak_count = 0
+        
+        cache.set(cache_key, streak_count, timeout=86400)  # 24 hours
+        
+        if streak_count >= 3:
+            achievement, created = QuizAchievement.objects.get_or_create(
+                user=user,
+                quiz=quiz,
+                achievement_type='STREAK',
+                defaults={'bonus_points': 40}
+            )
+            if created:
+                achievements.append('STREAK')
+                total_bonus_points += 40
+        
+        # Add bonus points atomically
+        if total_bonus_points > 0:
+            profile.add_points(total_bonus_points)
+            
+        return achievements

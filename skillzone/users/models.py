@@ -83,18 +83,37 @@ class Profile(models.Model):
         self.code_created_at = None
         self.save()
 
+    def add_points(self, points_to_add):
+        """Safely add points with validation"""
+        if points_to_add < 0:
+            raise ValueError("Cannot add negative points")
+        self.points += points_to_add
+        self.save()
+        return self.points
+
+    def deduct_points(self, points_to_deduct):
+        """Safely deduct points with validation"""
+        if points_to_deduct < 0:
+            raise ValueError("Cannot deduct negative points")
+        if self.points < points_to_deduct:
+            raise ValueError("Insufficient points")
+        self.points -= points_to_deduct
+        self.save()
+        return self.points
+
     def get_level(self):
         """Calculate user level based on points"""
-        if self.points < 100:
-            return 1
-        elif self.points < 300:
-            return 2
-        elif self.points < 600:
-            return 3
-        elif self.points < 1000:
-            return 4
-        else:
-            return 5
+        levels = [
+            (0, 1),      # 0-99 points = Level 1
+            (100, 2),    # 100-299 points = Level 2
+            (300, 3),    # 300-599 points = Level 3
+            (600, 4),    # 600-999 points = Level 4
+            (1000, 5),   # 1000+ points = Level 5
+        ]
+        for threshold, level in levels:
+            if self.points < threshold:
+                return level - 1
+        return len(levels)
 
 class Level(models.Model):
     LEVEL_CHOICES = [

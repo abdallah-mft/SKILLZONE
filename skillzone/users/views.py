@@ -115,16 +115,16 @@ def register(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
-    """Logs in a user using email or username and password"""
     try:
         identifier = request.data.get('email') or request.data.get('username')
         password = request.data.get('password')
 
         if not identifier or not password:
             return Response({
-                "success": False,
-                "message": "Email/username and password are required",
-                "data": None
+                'status': False,  # Changed from 'success' to 'status'
+                'message': 'Email/username and password are required',
+                'data': None,
+                'errors': {'validation': ['Email/username and password are required']}
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # First try to get user by email
@@ -136,53 +136,60 @@ def login(request):
                 user = User.objects.get(username=identifier)
             except User.DoesNotExist:
                 return Response({
-                    "success": False,
-                    "message": "Invalid credentials",
-                    "data": None
+                    'status': False,
+                    'message': 'Invalid credentials',
+                    'data': None,
+                    'errors': {'credentials': ['Invalid credentials']}
                 }, status=status.HTTP_401_UNAUTHORIZED)
 
         if not user.check_password(password):
             return Response({
-                "success": False,
-                "message": "Invalid credentials",
-                "data": None
+                'status': False,
+                'message': 'Invalid credentials',
+                'data': None,
+                'errors': {'credentials': ['Invalid credentials']}
             }, status=status.HTTP_401_UNAUTHORIZED)
 
         # Check if email is verified
         if not user.profile.email_verified:
-            # Generate new verification code if needed
-            verification_code = user.profile.generate_verification_code()
             try:
                 send_verification_email(user)
+                return Response({
+                    'status': False,
+                    'message': 'Email not verified. A new verification code has been sent.',
+                    'data': {
+                        'requires_verification': True,
+                        'email': user.email
+                    },
+                    'errors': {'verification': ['Email not verified']}
+                }, status=status.HTTP_403_FORBIDDEN)
             except Exception as e:
-                logger.error(f"Failed to send verification email: {str(e)}")
-
-            return Response({
-                "success": False,
-                "message": "Email not verified. A new verification code has been sent to your email.",
-                "requires_verification": True,
-                "email": user.email
-            }, status=status.HTTP_403_FORBIDDEN)
+                return Response({
+                    'status': False,
+                    'message': 'Failed to send verification email',
+                    'data': None,
+                    'errors': {'email': [str(e)]}
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Email is verified, proceed with login
         refresh = RefreshToken.for_user(user)
-        
         return Response({
-            "success": True,
-            "message": "Login successful",
-            "data": {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "user": UserSerializer(user).data
-            }
+            'status': True,
+            'message': 'Login successful',
+            'data': {
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': UserSerializer(user).data
+            },
+            'errors': None
         })
 
     except Exception as e:
-        logger.error(f"Login error: {str(e)}")
         return Response({
-            "success": False,
-            "message": "An error occurred during login",
-            "data": None
+            'status': False,
+            'message': 'Login failed',
+            'data': None,
+            'errors': {'detail': str(e)}
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
@@ -497,47 +504,53 @@ def verify_email(request):
         code = request.data.get('code', '').strip().upper()
         email = request.data.get('email', '').strip().lower()
         
-        logger.debug(f"Verification attempt - Email: {email}, Code: {code}")
-        
         if not code or not email:
             return Response({
-                'success': False,
-                'message': 'Both email and verification code are required'
+                'status': False,  # Changed from 'success' to 'status' for consistency
+                'message': 'Both email and verification code are required',
+                'data': None,
+                'errors': {'validation': ['Email and code are required']}
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = User.objects.get(email=email)
-            profile = user.profile
-            
-            if profile.email_verified:
+            if user.profile.is_verification_code_valid(code):
+                user.profile.email_verified = True
+                user.profile.save()
+                
+                # Generate tokens after verification
+                refresh = RefreshToken.for_user(user)
                 return Response({
-                    'success': False,
-                    'message': 'Email is already verified'
-                }, status=status.HTTP_400_BAD_REQUEST)
-                
-            if not profile.is_verification_code_valid(code):
+                    'status': True,
+                    'message': 'Email verified successfully',
+                    'data': {
+                        'access': str(refresh.access_token),
+                        'refresh': str(refresh),
+                        'user': UserSerializer(user).data
+                    },
+                    'errors': None
+                }, status=status.HTTP_200_OK)
+            else:
                 return Response({
-                    'success': False,
-                    'message': 'Invalid or expired verification code'
+                    'status': False,
+                    'message': 'Invalid or expired verification code',
+                    'data': None,
+                    'errors': {'code': ['Invalid or expired verification code']}
                 }, status=status.HTTP_400_BAD_REQUEST)
-                
-            profile.verify_email()
-            return Response({
-                'success': True,
-                'message': 'Email verified successfully'
-            })
-                
         except User.DoesNotExist:
             return Response({
-                'success': False,
-                'message': 'User not found'
+                'status': False,
+                'message': 'User not found',
+                'data': None,
+                'errors': {'email': ['User not found']}
             }, status=status.HTTP_404_NOT_FOUND)
             
     except Exception as e:
-        logger.error(f"Error in verify_email: {str(e)}", exc_info=True)
         return Response({
-            'success': False,
-            'message': f'Server error: {str(e)}'
+            'status': False,
+            'message': 'Verification failed',
+            'data': None,
+            'errors': {'detail': str(e)}
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])

@@ -4,6 +4,9 @@ SkillZone is a full-stack learning platform using Django REST Framework and Flut
 
 ---
 
+
+NOTE : Make sure to add v1 in all urls ( api/v1/....)
+
 ## 🚀 Core Features
 
 ### 🧠 Courses

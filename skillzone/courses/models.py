@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class Course(models.Model):
     COURSE_TYPES = (
@@ -9,9 +10,31 @@ class Course(models.Model):
     
     title = models.CharField(max_length=255)
     description = models.TextField()
+    rating = models.FloatField(
+        default=0.0,
+        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    )
+    duration = models.IntegerField(
+        help_text="Duration in minutes",
+        default=0,
+        validators=[MinValueValidator(0)]
+    )
     course_type = models.CharField(max_length=4, choices=COURSE_TYPES)
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        validators=[MinValueValidator(0)]
+    )
     points_required = models.IntegerField(default=0)
     points_reward = models.IntegerField(default=0)
+    thumbnail = models.ImageField(
+        upload_to='courses/thumbnails/',
+        null=True,
+        blank=True
+    )
+    
+    # Keeping these fields as they seem important for the system
     prerequisites = models.ManyToManyField('self', blank=True, symmetrical=False)
     category = models.CharField(max_length=50, blank=True)
     tags = models.CharField(max_length=255, blank=True)
@@ -24,7 +47,6 @@ class Course(models.Model):
         ],
         default='BEGINNER'
     )
-    estimated_duration = models.IntegerField(help_text="Estimated duration in minutes", default=0)
 
     def clean(self):
         if self.course_type == 'HARD' and self.points_required <= 0:
@@ -39,15 +61,37 @@ class Course(models.Model):
     def __str__(self):
         return self.title
 
+    @property
+    def is_liked(self):
+        # This should be handled in the serializer based on the current user
+        return False
+
 class Lesson(models.Model):
     course = models.ForeignKey(Course, related_name="lessons", on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
+    number = models.IntegerField(
+        default=1,
+        help_text="Lesson number/order within the course"
+    )
+    duration = models.IntegerField(
+        help_text="Duration in minutes",
+        default=0,
+        validators=[MinValueValidator(0)]
+    )
     video_url = models.URLField()
     points_required = models.IntegerField(default=0)
-    # Remove points_reward field
+
+    class Meta:
+        ordering = ['number']  # This will ensure lessons are ordered by their number
+        unique_together = ['course', 'number']  # Ensures no duplicate lesson numbers in a course
 
     def __str__(self):
-        return self.title
+        return f"{self.course.title} - Lesson {self.number}: {self.title}"
+
+    @property
+    def is_completed(self):
+        # This will be handled in the serializer based on UnlockedLesson
+        return False
 
 class UnlockedLesson(models.Model):
     user = models.ForeignKey('users.Profile', on_delete=models.CASCADE)

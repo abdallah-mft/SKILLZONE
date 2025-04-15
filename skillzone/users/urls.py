@@ -13,5 +13,4 @@ urlpatterns = [
     path('update-points/', views.update_points, name='update-points'),
     path('update-device-token/', views.update_device_token, name='update-device-token'),
     path('verify-email/', views.verify_email, name='verify-email'),
-    path('verify-email/<str:token>/', views.EmailVerificationView.as_view(), name='verify-email-token'),
 ]

@@ -87,9 +87,9 @@ SIMPLE_JWT = {
 
 ### 🔐 Auth
 
-#### Register
+#### Register 
 ```http
-POST /api/users/register/
+POST /api/v1/users/register/
 ```
 ```json
 {
@@ -102,7 +102,7 @@ POST /api/users/register/
 
 #### Login
 ```http
-POST /api/users/login/
+POST /api/v1/users/login/
 ```
 ```json
 {

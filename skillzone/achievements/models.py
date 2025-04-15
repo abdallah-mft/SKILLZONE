@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 
+User = get_user_model()
+
 class Achievement(models.Model):
     TYPES = (
         ('BADGE', 'Badge'),
@@ -22,24 +24,13 @@ class Achievement(models.Model):
     requirements = models.JSONField(
         help_text="Criteria to unlock achievement"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    level = models.IntegerField(default=1)
-    rarity = models.CharField(
-        max_length=20,
-        choices=[
-            ('COMMON', 'Common'),
-            ('RARE', 'Rare'),
-            ('EPIC', 'Epic'),
-            ('LEGENDARY', 'Legendary')
-        ],
-        default='COMMON'
-    )
-
-    def __str__(self):
-        return f"{self.get_type_display()}: {self.title}"
 
 class UserAchievement(models.Model):
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='achievements'
+    )
     achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
     earned_date = models.DateTimeField(auto_now_add=True)
     progress = models.JSONField(

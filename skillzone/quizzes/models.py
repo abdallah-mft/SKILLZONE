@@ -1,7 +1,10 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth import get_user_model
 from courses.models import Course, Lesson
 from users.models import Profile
+
+User = get_user_model()
 
 class Quiz(models.Model):
     DIFFICULTY_LEVELS = (
@@ -77,7 +80,11 @@ class Answer(models.Model):
 
 class QuizAttempt(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
-    user = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='quiz_attempts'
+    )
     score = models.IntegerField(default=0)
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)

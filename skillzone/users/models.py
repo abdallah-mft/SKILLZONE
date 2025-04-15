@@ -1,16 +1,44 @@
 import random
 import string
 from django.db import models
-from django.contrib.auth import get_user_model
-from django.db.models.signals import post_save
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 import uuid
 from django.utils import timezone
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
-User = get_user_model()
+# First, modify OutstandingToken to cascade delete
+OutstandingToken._meta.get_field('user').remote_field.on_delete = models.CASCADE
+
+# Add a pre-delete signal handler for User
+@receiver(pre_delete, sender=User)
+def delete_user_related_data(sender, instance, **kwargs):
+    """
+    Delete all related data before deleting the user
+    This ensures proper order of deletion
+    """
+    # Delete tokens first
+    OutstandingToken.objects.filter(user=instance).delete()
+    
+    # Delete profile (should happen automatically due to CASCADE)
+    try:
+        instance.profile.delete()
+    except:
+        pass
+
+    # Add other specific deletions here if needed
+    # For example:
+    # instance.quizzes.all().delete()
+    # instance.course_enrollments.all().delete()
+    # etc.
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.CASCADE,
+        related_name='profile'
+    )
     verification_code = models.CharField(max_length=4, blank=True)
     email_verified = models.BooleanField(default=False)
     code_created_at = models.DateTimeField(null=True)

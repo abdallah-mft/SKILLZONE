@@ -1,6 +1,9 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
+
+User = get_user_model()
 
 class Course(models.Model):
     COURSE_TYPES = (
@@ -137,3 +140,19 @@ class CourseProgress(models.Model):
     
     class Meta:
         unique_together = ['user', 'course']
+
+class CourseEnrollment(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='course_enrollments'
+    )
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    completed = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['user', 'course']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.course.title}"

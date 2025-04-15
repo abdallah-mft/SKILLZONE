@@ -44,68 +44,73 @@ def index(request):
 def register(request):
     logger.info("Starting registration process")
     
-    serializer = UserRegistrationSerializer(data=request.data)
-    
-    if not serializer.is_valid():
-        return Response({
-            'success': False,
-            'message': 'Validation error',
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    validated_data = serializer.validated_data
-
-    if not validated_data.get('accept_terms'):
-        return Response({
-            'success': False,
-            'message': 'Validation error',
-            'errors': {
-                'accept_terms': ['Terms must be accepted.']
-            }
-        }, status=status.HTTP_400_BAD_REQUEST)
-
     try:
-        with transaction.atomic():
-            # Remove non-user fields
-            user_data = validated_data.copy()
-            user_data.pop('password2', None)
-            user_data.pop('accept_terms', None)
-            password = user_data.pop('password', None)
-            
-            # Create user
-            user = User.objects.create_user(
-                password=password,
-                **user_data
-            )
-
-            # Send verification email
-            try:
-                send_verification_email(user)
-            except Exception as e:
-                logger.error(f"Failed to send verification email: {str(e)}")
-                return Response({
-                    "success": False,
-                    "message": "Registration successful but failed to send verification email",
-                    "errors": {"email": str(e)}
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            # Return response WITHOUT tokens - user must verify email first
+        serializer = UserRegistrationSerializer(data=request.data)
+        
+        if not serializer.is_valid():
             return Response({
-                "success": True,
-                "message": "Registration successful. Please check your email for verification code.",
-                "data": {
-                    "email": user.email,
-                    "requires_verification": True
-                }
-            }, status=status.HTTP_201_CREATED)
+                'status': False,
+                'message': 'Validation error',
+                'data': None,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-    except Exception as e:
-        logger.error(f"Registration error: {str(e)}")
-        return Response({
-            "success": False,
-            "message": "An error occurred during registration",
-            "errors": {"detail": str(e)}
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        validated_data = serializer.validated_data
+
+        if not validated_data.get('accept_terms'):
+            return Response({
+                'status': False,
+                'message': 'Terms must be accepted',
+                'data': None,
+                'errors': {
+                    'accept_terms': ['Terms must be accepted.']
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                # Remove non-user fields
+                user_data = validated_data.copy()
+                user_data.pop('password2', None)
+                user_data.pop('accept_terms', None)
+                password = user_data.pop('password', None)
+                
+                # Create user
+                user = User.objects.create_user(
+                    password=password,
+                    **user_data
+                )
+
+                # Send verification email
+                try:
+                    send_verification_email(user)
+                except Exception as e:
+                    logger.error(f"Failed to send verification email: {str(e)}")
+                    return Response({
+                        "success": False,
+                        "message": "Registration successful but failed to send verification email",
+                        "errors": {"email": str(e)}
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                # Return response WITHOUT tokens - user must verify email first
+                return Response({
+                    'status': True,
+                    'message': 'Registration successful. Please check your email for verification code.',
+                    'data': {
+                        'email': user.email,
+                        'requires_verification': True
+                    },
+                    'errors': None
+                }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            logger.error(f"Registration error: {str(e)}")
+            return Response({
+                'status': False,
+                'message': 'An error occurred during registration',
+                'data': None,
+                'errors': {'detail': str(e)}
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

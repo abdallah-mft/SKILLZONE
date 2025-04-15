@@ -28,6 +28,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode
 from django.http import JsonResponse
 from rest_framework.views import APIView
+from .permissions import IsEmailVerified
 
 logger = logging.getLogger(__name__)
 
@@ -88,17 +89,13 @@ def register(request):
                     "errors": {"email": str(e)}
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            # Generate tokens
-            refresh = RefreshToken.for_user(user)
-            serializer = ProfileSerializer(user.profile)
-            
+            # Return response WITHOUT tokens - user must verify email first
             return Response({
                 "success": True,
                 "message": "Registration successful. Please check your email for verification code.",
                 "data": {
-                    "access": str(refresh.access_token),
-                    "refresh": str(refresh),
-                    "user": serializer.data
+                    "email": user.email,
+                    "requires_verification": True
                 }
             }, status=status.HTTP_201_CREATED)
 
@@ -106,7 +103,7 @@ def register(request):
         logger.error(f"Registration error: {str(e)}")
         return Response({
             "success": False,
-            "message": "Registration failed",
+            "message": "An error occurred during registration",
             "errors": {"detail": str(e)}
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -115,7 +112,6 @@ def register(request):
 def login(request):
     """Logs in a user using email or username and password"""
     try:
-        # Accept either email or username field
         identifier = request.data.get('email') or request.data.get('username')
         password = request.data.get('password')
 
@@ -126,47 +122,61 @@ def login(request):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Try to get user by email first, then username if email fails
+        # First try to get user by email
         try:
             user = User.objects.get(email=identifier)
         except User.DoesNotExist:
+            # If not found by email, try username
             try:
                 user = User.objects.get(username=identifier)
             except User.DoesNotExist:
                 return Response({
                     "success": False,
-                    "message": "User not found",
+                    "message": "Invalid credentials",
                     "data": None
-                }, status=status.HTTP_404_NOT_FOUND)
+                }, status=status.HTTP_401_UNAUTHORIZED)
 
-        # Authenticate user
-        authenticated_user = authenticate(username=user.username, password=password)
-        
-        if authenticated_user:
-            refresh = RefreshToken.for_user(authenticated_user)
-            profile = get_object_or_404(Profile, user=authenticated_user)
-            serializer = ProfileSerializer(profile)
-            
-            return Response({
-                "success": True,
-                "message": "Login successful",
-                "data": {
-                    "access": str(refresh.access_token),
-                    "refresh": str(refresh),
-                    "user": serializer.data
-                }
-            })
-        else:
+        if not user.check_password(password):
             return Response({
                 "success": False,
                 "message": "Invalid credentials",
                 "data": None
             }, status=status.HTTP_401_UNAUTHORIZED)
 
+        # Check if email is verified
+        if not user.profile.email_verified:
+            # Generate new verification code if needed
+            verification_code = user.profile.generate_verification_code()
+            try:
+                send_verification_email(user)
+            except Exception as e:
+                logger.error(f"Failed to send verification email: {str(e)}")
+
+            return Response({
+                "success": False,
+                "message": "Email not verified. A new verification code has been sent to your email.",
+                "requires_verification": True,
+                "email": user.email
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Email is verified, proceed with login
+        refresh = RefreshToken.for_user(user)
+        
+        return Response({
+            "success": True,
+            "message": "Login successful",
+            "data": {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": UserSerializer(user).data
+            }
+        })
+
     except Exception as e:
+        logger.error(f"Login error: {str(e)}")
         return Response({
             "success": False,
-            "message": str(e),
+            "message": "An error occurred during login",
             "data": None
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

@@ -38,10 +38,24 @@ class CourseSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Course
-        fields = ('id', 'title', 'description', 'course_type', 
-                 'points_required', 'can_access', 'category',
-                 'tags_list', 'difficulty_level', 'estimated_duration', 
-                 'lessons', 'completion_stats')
+        fields = (
+            'id', 
+            'title', 
+            'description', 
+            'course_type',
+            'points_required',
+            'points_reward',
+            'can_access',
+            'category',
+            'tags_list',
+            'difficulty_level',
+            'duration',  # Changed from estimated_duration to duration
+            'lessons',
+            'completion_stats',
+            'rating',
+            'price',
+            'thumbnail'
+        )
 
     def get_can_access(self, obj):
         request = self.context.get('request')

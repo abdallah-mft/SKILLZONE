@@ -42,12 +42,14 @@ def index(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    logger.info("Starting registration process")
+    logger.info(f"Starting registration process with data: {request.data}")
     
     try:
         serializer = UserRegistrationSerializer(data=request.data)
+        logger.info("Created serializer")
         
         if not serializer.is_valid():
+            logger.error(f"Validation errors: {serializer.errors}")
             return Response({
                 'status': False,
                 'message': 'Validation error',
@@ -56,8 +58,10 @@ def register(request):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         validated_data = serializer.validated_data
+        logger.info("Data validated successfully")
 
         if not validated_data.get('accept_terms'):
+            logger.warning("Terms not accepted")
             return Response({
                 'status': False,
                 'message': 'Terms must be accepted',
@@ -67,50 +71,52 @@ def register(request):
                 }
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            with transaction.atomic():
-                # Remove non-user fields
-                user_data = validated_data.copy()
-                user_data.pop('password2', None)
-                user_data.pop('accept_terms', None)
-                password = user_data.pop('password', None)
-                
-                # Create user
-                user = User.objects.create_user(
-                    password=password,
-                    **user_data
-                )
+        with transaction.atomic():
+            # Remove non-user fields
+            user_data = validated_data.copy()
+            user_data.pop('password2', None)
+            user_data.pop('accept_terms', None)
+            password = user_data.pop('password', None)
+            
+            logger.info(f"Creating user with data: {user_data}")
+            
+            # Create user
+            user = User.objects.create_user(
+                password=password,
+                **user_data
+            )
+            logger.info(f"User created successfully with ID: {user.id}")
 
-                # Send verification email
-                try:
-                    send_verification_email(user)
-                except Exception as e:
-                    logger.error(f"Failed to send verification email: {str(e)}")
-                    return Response({
-                        "success": False,
-                        "message": "Registration successful but failed to send verification email",
-                        "errors": {"email": str(e)}
-                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-                # Return response WITHOUT tokens - user must verify email first
+            # Send verification email
+            try:
+                send_verification_email(user)
+                logger.info("Verification email sent successfully")
+            except Exception as e:
+                logger.error(f"Failed to send verification email: {str(e)}", exc_info=True)
                 return Response({
-                    'status': True,
-                    'message': 'Registration successful. Please check your email for verification code.',
-                    'data': {
-                        'email': user.email,
-                        'requires_verification': True
-                    },
-                    'errors': None
-                }, status=status.HTTP_201_CREATED)
+                    "status": False,
+                    "message": "Registration successful but failed to send verification email",
+                    "errors": {"email": str(e)}
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        except Exception as e:
-            logger.error(f"Registration error: {str(e)}")
             return Response({
-                'status': False,
-                'message': 'An error occurred during registration',
-                'data': None,
-                'errors': {'detail': str(e)}
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                'status': True,
+                'message': 'Registration successful. Please check your email for verification code.',
+                'data': {
+                    'email': user.email,
+                    'requires_verification': True
+                },
+                'errors': None
+            }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        logger.error(f"Registration error: {str(e)}", exc_info=True)
+        return Response({
+            'status': False,
+            'message': 'An error occurred during registration',
+            'data': None,
+            'errors': {'detail': str(e)}
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

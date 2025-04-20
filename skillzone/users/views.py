@@ -271,23 +271,45 @@ def update_device_token(request):
 def logout(request):
     try:
         refresh_token = request.data.get('refresh_token')
-        if refresh_token:
+        if not refresh_token:
+            return Response({
+                'status': False,
+                'message': 'Refresh token is required',
+                'data': None,
+                'errors': {'refresh_token': ['This field is required']}
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
             token = RefreshToken(refresh_token)
             token.blacklist()
+            
+            profile = request.user.profile
+            if profile.device_token:
+                profile.device_token = None
+                profile.save()
+
             return Response({
-                "success": True,
-                "message": "Successfully logged out"
+                'status': True,
+                'message': 'Successfully logged out',
+                'data': None,
+                'errors': None
             }, status=status.HTTP_200_OK)
-        else:
+
+        except TokenError as e:
             return Response({
-                "success": False,
-                "message": "Refresh token is required"
+                'status': False,
+                'message': 'Invalid or expired refresh token',
+                'data': None,
+                'errors': {'refresh_token': ['Invalid or expired token']}
             }, status=status.HTTP_400_BAD_REQUEST)
+
     except Exception as e:
         return Response({
-            "success": False,
-            "message": str(e)
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'status': False,
+            'message': 'An error occurred during logout',
+            'data': None,
+            'errors': {'detail': str(e)}
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -296,14 +318,12 @@ def update_profile(request):
         user = request.user
         profile = user.profile
         
-        # Update user fields
         if 'first_name' in request.data:
             user.first_name = request.data['first_name']
         if 'last_name' in request.data:
             user.last_name = request.data['last_name']
         user.save()
         
-        # Update profile fields
         if 'bio' in request.data:
             profile.bio = request.data['bio']
         if 'notification_preferences' in request.data:

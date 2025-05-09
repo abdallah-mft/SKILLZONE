@@ -127,17 +127,15 @@ def login(request):
 
         if not identifier or not password:
             return Response({
-                'status': False,  # Changed from 'success' to 'status'
+                'status': False,  
                 'message': 'Email/username and password are required',
                 'data': None,
                 'errors': {'validation': ['Email/username and password are required']}
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # First try to get user by email
         try:
             user = User.objects.get(email=identifier)
         except User.DoesNotExist:
-            # If not found by email, try username
             try:
                 user = User.objects.get(username=identifier)
             except User.DoesNotExist:

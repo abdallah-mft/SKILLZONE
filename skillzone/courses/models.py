@@ -43,6 +43,7 @@ class Course(models.Model):
     
     @property
     def points(self):
+        """Return points_reward to maintain compatibility with frontend"""
         return self.points_reward
     
     @property

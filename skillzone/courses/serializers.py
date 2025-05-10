@@ -8,12 +8,14 @@ class LessonSerializer(serializers.ModelSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     lessons = LessonSerializer(many=True, read_only=True)
+    # Add this line to create a virtual 'points' field that maps to points_reward
+    points = serializers.IntegerField(source='points_reward', read_only=True)
     
     class Meta:
         model = Course
         fields = [
             'id', 'title', 'description', 'rating', 'duration', 
-            'course_type', 'points_reward', 'price', 'difficulty_level', 
+            'course_type', 'points', 'points_reward', 'price', 'difficulty_level', 
             'category', 'tags', 'lessons', 'lessons_count'
         ]
 

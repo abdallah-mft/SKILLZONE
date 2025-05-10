@@ -22,7 +22,7 @@ class Course(models.Model):
     rating = models.FloatField(default=0.0)
     duration = models.IntegerField(default=0)  # Duration in minutes
     course_type = models.CharField(max_length=10, choices=COURSE_TYPES)
-    points = models.IntegerField(default=0)  # Points reward for completing the course
+    points_reward = models.IntegerField(default=0)  # Points reward for completing the course
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Only for HARD skills
     
     # Additional fields for backend functionality
@@ -40,6 +40,10 @@ class Course(models.Model):
     def type(self):
         """Return 'soft' or 'hard' to match frontend format"""
         return self.course_type.lower()
+    
+    @property
+    def points(self):
+        return self.points_reward
     
     @property
     def lessons_count(self):

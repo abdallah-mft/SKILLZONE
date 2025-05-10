@@ -13,7 +13,7 @@ class CourseSerializer(serializers.ModelSerializer):
         model = Course
         fields = [
             'id', 'title', 'description', 'rating', 'duration', 
-            'course_type', 'points', 'price', 'difficulty_level', 
+            'course_type', 'points_reward', 'price', 'difficulty_level', 
             'category', 'tags', 'lessons', 'lessons_count'
         ]
 

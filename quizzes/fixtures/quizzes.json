@@ -1,0 +1,34 @@
+import json
+import os
+
+# The JSON data you provided
+data = {
+  "quizzes": [
+    {
+      "id": "s1q",
+      "courseId": "s1",
+      "title": "Effective Communication Skills Quiz",
+      "timePerQuestion": 30,
+      "timeUnit": "seconds",
+      "questions": [
+        # ... (questions data)
+      ]
+    },
+    {
+      "id": "h1q",
+      "courseId": "h1",
+      "title": "Flutter Advanced Concepts Quiz",
+      "timePerQuestion": 30,
+      "timeUnit": "seconds",
+      "questions": [
+        # ... (questions data)
+      ]
+    }
+  ]
+}
+
+# Script to convert this to Django fixture format
+# You would need to run this script separately to generate the fixture file
+
+# This is just a placeholder for the conversion logic
+# The actual implementation would depend on your model structure

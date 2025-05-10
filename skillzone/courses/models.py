@@ -1,158 +1,94 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
 
 User = get_user_model()
 
 class Course(models.Model):
-    COURSE_TYPES = (
-        ('SOFT', 'Soft Skills'),
-        ('HARD', 'Hard Skills'),
-    )
+    COURSE_TYPES = [
+        ('SOFT', 'Soft Skill'),
+        ('HARD', 'Hard Skill'),
+    ]
     
+    DIFFICULTY_LEVELS = [
+        ('BEGINNER', 'Beginner'),
+        ('INTERMEDIATE', 'Intermediate'),
+        ('ADVANCED', 'Advanced'),
+    ]
+    
+    # Fields to match frontend structure
     title = models.CharField(max_length=255)
     description = models.TextField()
-    rating = models.FloatField(
-        default=0.0,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
-    )
-    duration = models.IntegerField(
-        help_text="Duration in minutes",
-        default=0,
-        validators=[MinValueValidator(0)]
-    )
-    course_type = models.CharField(max_length=4, choices=COURSE_TYPES)
-    price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0.00,
-        validators=[MinValueValidator(0)]
-    )
-    points_required = models.IntegerField(default=0)
-    points_reward = models.IntegerField(default=0)
-    thumbnail = models.ImageField(
-        upload_to='courses/thumbnails/',
-        null=True,
-        blank=True
-    )
+    rating = models.FloatField(default=0.0)
+    duration = models.IntegerField(default=0)  # Duration in minutes
+    course_type = models.CharField(max_length=10, choices=COURSE_TYPES)
+    points = models.IntegerField(default=0)  # Points reward for completing the course
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Only for HARD skills
     
-    # Keeping these fields as they seem important for the system
-    prerequisites = models.ManyToManyField('self', blank=True, symmetrical=False)
-    category = models.CharField(max_length=50, blank=True)
+    # Additional fields for backend functionality
+    difficulty_level = models.CharField(max_length=15, choices=DIFFICULTY_LEVELS, default='BEGINNER')
+    category = models.CharField(max_length=100, default='General')
     tags = models.CharField(max_length=255, blank=True)
-    difficulty_level = models.CharField(
-        max_length=20,
-        choices=[
-            ('BEGINNER', 'Beginner'),
-            ('INTERMEDIATE', 'Intermediate'),
-            ('ADVANCED', 'Advanced')
-        ],
-        default='BEGINNER'
-    )
-
-    def clean(self):
-        if self.course_type == 'HARD' and self.points_required <= 0:
-            raise ValidationError({
-                'points_required': 'HARD courses must require points to unlock'
-            })
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    external_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    
     def __str__(self):
         return self.title
-
+    
     @property
-    def is_liked(self):
-        # This should be handled in the serializer based on the current user
-        return False
+    def type(self):
+        """Return 'soft' or 'hard' to match frontend format"""
+        return self.course_type.lower()
+    
+    @property
+    def lessons_count(self):
+        return self.lessons.count()
 
 class Lesson(models.Model):
-    course = models.ForeignKey(Course, related_name="lessons", on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, related_name='lessons', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
-    number = models.IntegerField(
-        default=1,
-        help_text="Lesson number/order within the course"
-    )
-    duration = models.IntegerField(
-        help_text="Duration in minutes",
-        default=0,
-        validators=[MinValueValidator(0)]
-    )
-    video_url = models.URLField()
-    points_required = models.IntegerField(default=0)
-
+    number = models.IntegerField()  # Order within the course
+    duration = models.IntegerField(default=0)  # Duration in minutes
+    video_url = models.URLField(max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Additional fields for backend functionality
+    content = models.TextField(blank=True)
+    
     class Meta:
-        ordering = ['number']  # This will ensure lessons are ordered by their number
-        unique_together = ['course', 'number']  # Ensures no duplicate lesson numbers in a course
-
+        ordering = ['number']
+        unique_together = ['course', 'number']
+    
     def __str__(self):
         return f"{self.course.title} - Lesson {self.number}: {self.title}"
-
+    
     @property
-    def is_completed(self):
-        # This will be handled in the serializer based on UnlockedLesson
-        return False
+    def id(self):
+        """Generate ID in the format expected by frontend (e.g., 's1l1')"""
+        course_prefix = 's' if self.course.course_type == 'SOFT' else 'h'
+        course_id = self.course.id
+        return f"{course_prefix}{course_id}l{self.number}"
 
-class UnlockedLesson(models.Model):
-    user = models.ForeignKey('users.Profile', on_delete=models.CASCADE)
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    unlocked_at = models.DateTimeField(auto_now_add=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        unique_together = ['user', 'lesson']
-
-    def __str__(self):
-        return f"{self.user.user.username} - {self.lesson.title}"
-
-class UnlockedCourse(models.Model):
-    user = models.ForeignKey('users.Profile', on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    unlocked_at = models.DateTimeField(auto_now_add=True)
-    points_spent = models.IntegerField(default=0)
-
-    class Meta:
-        unique_together = ['user', 'course']
-
-    def __str__(self):
-        return f"{self.user.user.username} - {self.course.title}"
-
-class CourseProgress(models.Model):
-    user = models.ForeignKey('users.Profile', on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+class UserCourseProgress(models.Model):
+    user = models.ForeignKey(User, related_name='course_progress', on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, related_name='user_progress', on_delete=models.CASCADE)
+    completed_lessons = models.ManyToManyField(Lesson, related_name='completed_by')
+    is_completed = models.BooleanField(default=False)
     started_at = models.DateTimeField(auto_now_add=True)
-    last_activity = models.DateTimeField(auto_now=True)
-    completed_lessons = models.ManyToManyField(Lesson)
-    completed_quizzes = models.ManyToManyField('quizzes.Quiz')
-    
-    @property
-    def completion_percentage(self):
-        total_items = self.course.lessons.count() + self.course.quizzes.count()
-        completed_items = self.completed_lessons.count() + self.completed_quizzes.count()
-        return (completed_items / total_items * 100) if total_items > 0 else 0
-    
-    @property
-    def is_completed(self):
-        return self.completion_percentage == 100
+    completed_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         unique_together = ['user', 'course']
-
-class CourseEnrollment(models.Model):
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='course_enrollments'
-    )
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    enrolled_at = models.DateTimeField(auto_now_add=True)
-    completed = models.BooleanField(default=False)
-
-    class Meta:
-        unique_together = ['user', 'course']
-
+    
     def __str__(self):
         return f"{self.user.username} - {self.course.title}"
+    
+    @property
+    def progress_percentage(self):
+        total_lessons = self.course.lessons.count()
+        if total_lessons == 0:
+            return 0
+        completed = self.completed_lessons.count()
+        return int((completed / total_lessons) * 100)

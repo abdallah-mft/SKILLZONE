@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import Course, Lesson, UnlockedCourse, UnlockedLesson, CourseProgress
+from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
 
 @api_view(['GET'])
@@ -340,4 +340,73 @@ def course_statistics(request, course_id):
             "message": str(e),
             "data": None
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
+from rest_framework import viewsets, permissions
+from rest_framework.decorators import api_view, permission_classes
+from .models import Course, Lesson, UserCourseProgress
+from .serializers import CourseSerializer, LessonSerializer, UserCourseProgressSerializer
+
+# API ViewSets
+class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = Course.objects.all()
+        course_type = self.request.query_params.get('type')
+        if course_type:
+            queryset = queryset.filter(course_type=course_type.upper())
+        return queryset
+
+class LessonViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = Lesson.objects.all()
+        course_id = self.request.query_params.get('course_id')
+        if course_id:
+            queryset = queryset.filter(course_id=course_id)
+        return queryset
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_user_progress(request):
+    progress = UserCourseProgress.objects.filter(user=request.user)
+    serializer = UserCourseProgressSerializer(progress, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def mark_lesson_complete(request, lesson_id):
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+    course = lesson.course
+    
+    # Get or create progress record
+    progress, created = UserCourseProgress.objects.get_or_create(
+        user=request.user,
+        course=course
+    )
+    
+    # Add lesson to completed lessons
+    progress.completed_lessons.add(lesson)
+    
+    # Check if all lessons are completed
+    total_lessons = course.lessons.count()
+    completed_lessons = progress.completed_lessons.count()
+    
+    if total_lessons == completed_lessons:
+        progress.is_completed = True
+        progress.save()
+    
+    return JsonResponse({
+        'success': True,
+        'progress': progress.progress_percentage
+    })
 

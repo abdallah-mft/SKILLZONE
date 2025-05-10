@@ -1,0 +1,230 @@
+{
+  "softSkillsCourses": [
+    {
+      "id": "s1",
+      "title": "Effective Communication Skills",
+      "description": "Master the art of clear and impactful communication in professional settings. Learn key strategies for better verbal and non-verbal communication.",
+      "rating": 4.5,
+      "duration": 150,
+      "type": "soft",
+      "points": 100,
+      "lessons": [
+        {
+          "number": 1,
+          "id": "s1l1",
+          "title": "Understanding Communication Basics",
+          "duration": 30,
+          "videoUrl": "https://drive.google.com/file/d/1WRuqlqEFj4vorPakJ46yaVASOfF2UWVi/view?usp=sharing",
+          "isCompleted": false
+        },
+        {
+          "number": 2,
+          "id": "s1l2",
+          "title": "Verbal Communication Techniques",
+          "duration": 45,
+          "videoUrl": "https://drive.google.com/file/d/1WRuqlqEFj4vorPakJ46yaVASOfF2UWVi/view?usp=sharing",
+          "isCompleted": false
+        },
+        {
+          "number": 3,
+          "id": "s1l3",
+          "title": "Non-verbal Communication",
+          "duration": 35,
+          "videoUrl": "https://drive.google.com/file/d/1WRuqlqEFj4vorPakJ46yaVASOfF2UWVi/view?usp=sharing",
+          "isCompleted": false
+        },
+        {
+          "number": 4,
+          "id": "s1l4",
+          "title": "Active Listening Skills",
+          "duration": 40,
+          "videoUrl": "https://drive.google.com/file/d/1WRuqlqEFj4vorPakJ46yaVASOfF2UWVi/view?usp=sharing",
+          "isCompleted": false
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "Leadership Fundamentals",
+      "description": "Develop essential leadership skills and learn how to inspire and guide teams effectively. Perfect for aspiring managers and team leaders.",
+      "rating": 4.8,
+      "duration": 180,
+      "type": "soft",
+      "points": 150,
+      "lessons": []
+    },
+    {
+      "id": "s3",
+      "title": "Time Management Mastery",
+      "description": "Learn proven techniques to maximize productivity and achieve better work-life balance through effective time management strategies.",
+      "rating": 4.6,
+      "duration": 105,
+      "type": "soft",
+      "points": 80,
+      "lessons": []
+    },
+    {
+      "id": "s4",
+      "title": "Emotional Intelligence at Work",
+      "description": "Enhance your emotional intelligence to build better relationships and navigate workplace dynamics more effectively.",
+      "rating": 4.9,
+      "duration": 135,
+      "type": "soft",
+      "points": 120,
+      "lessons": []
+    },
+    {
+      "id": "s5",
+      "title": "Public Speaking Excellence",
+      "description": "Overcome stage fright and master the art of public speaking. Learn to deliver compelling presentations with confidence.",
+      "rating": 4.7,
+      "duration": 240,
+      "type": "soft",
+      "points": 200,
+      "lessons": []
+    },
+    {
+      "id": "s6",
+      "title": "Conflict Resolution Strategies",
+      "description": "Learn effective techniques for managing and resolving workplace conflicts. Transform challenges into opportunities for growth.",
+      "rating": 4.4,
+      "duration": 120,
+      "type": "soft",
+      "points": 100,
+      "lessons": []
+    },
+    {
+      "id": "s7",
+      "title": "Team Building Essentials",
+      "description": "Discover proven methods for building and maintaining high-performing teams. Foster collaboration and team spirit.",
+      "rating": 4.3,
+      "duration": 90,
+      "type": "soft",
+      "points": 75,
+      "lessons": []
+    }
+  ],
+  "hardSkillsCourses": [
+    {
+      "id": "h1",
+      "title": "Flutter Advanced Concepts",
+      "description": "Deep dive into advanced Flutter development concepts including state management, custom widgets, and performance optimization.",
+      "rating": 4.7,
+      "duration": 480,
+      "type": "hard",
+      "points": 500,
+      "price": 199,
+      "lessons": [
+        {
+          "number": 1,
+          "id": "h1l1",
+          "title": "Advanced State Management",
+          "duration": 60,
+          "videoUrl": "https://drive.google.com/file/d/1WRuqlqEFj4vorPakJ46yaVASOfF2UWVi/view?usp=sharing",
+          "isCompleted": false
+        },
+        {
+          "number": 2,
+          "id": "h1l2",
+          "title": "Custom Widgets and Inheritance",
+          "duration": 55,
+          "videoUrl": "https://drive.google.com/file/d/1WRuqlqEFj4vorPakJ46yaVASOfF2UWVi/view?usp=sharing",
+          "isCompleted": false
+        },
+        {
+          "number": 3,
+          "id": "h1l3",
+          "title": "Performance Optimization Techniques",
+          "duration": 50,
+          "videoUrl": "https://drive.google.com/file/d/1WRuqlqEFj4vorPakJ46yaVASOfF2UWVi/view?usp=sharing",
+          "isCompleted": false
+        },
+        {
+          "number": 4,
+          "id": "h1l4",
+          "title": "Advanced Animation and Gestures",
+          "duration": 65,
+          "videoUrl": "https://drive.google.com/file/d/1WRuqlqEFj4vorPakJ46yaVASOfF2UWVi/view?usp=sharing",
+          "isCompleted": false
+        }
+      ]
+    },
+    {
+      "id": "h2",
+      "title": "AWS Cloud Architecture",
+      "description": "Master cloud computing with AWS. Learn to design, deploy and manage scalable cloud infrastructure.",
+      "rating": 4.6,
+      "duration": 600,
+      "type": "hard",
+      "price": 99,
+      "points": 400,
+      "lessons": []
+    },
+    {
+      "id": "h3",
+      "title": "Machine Learning Fundamentals",
+      "description": "Introduction to machine learning algorithms, data preprocessing, and model training. Includes hands-on projects.",
+      "rating": 4.9,
+      "duration": 720,
+      "type": "hard",
+      "price": 149,
+      "points": 600,
+      "lessons": []
+    },
+    {
+      "id": "h4",
+      "title": "Blockchain Development",
+      "description": "Learn blockchain technology and smart contract development. Build decentralized applications from scratch.",
+      "rating": 4.5,
+      "duration": 480,
+      "type": "hard",
+      "points": 800,
+      "price": 199,
+      "lessons": []
+    },
+    {
+      "id": "h5",
+      "title": "Advanced Python Programming",
+      "description": "Master advanced Python concepts including metaclasses, decorators, and concurrent programming.",
+      "rating": 4.8,
+      "duration": 900,
+      "type": "hard",
+      "price": 129,
+      "points": 700,
+      "lessons": []
+    },
+    {
+      "id": "h6",
+      "title": "Cybersecurity Essentials",
+      "description": "Comprehensive guide to network security, threat detection, and security best practices.",
+      "rating": 4.7,
+      "duration": 1200,
+      "type": "hard",
+      "price": 199,
+      "points": 900,
+      "lessons": []
+    },
+    {
+      "id": "h7",
+      "title": "DevOps & CI/CD",
+      "description": "Learn modern DevOps practices, continuous integration, and deployment automation techniques.",
+      "rating": 4.6,
+      "duration": 960,
+      "type": "hard",
+      "points": 750,
+      "price": 149,
+      "lessons": []
+    },
+    {
+      "id": "h8",
+      "title": "React Native Masterclass",
+      "description": "Build cross-platform mobile applications using React Native. Includes real-world project development.",
+      "rating": 4.5,
+      "duration": 600,
+      "type": "hard",
+      "price": 89,
+      "points": 400,
+      "lessons": []
+    }
+  ]
+}

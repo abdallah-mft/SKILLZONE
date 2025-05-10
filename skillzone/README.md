@@ -159,10 +159,11 @@ POST /api/v1/token/refresh/
 - `POST /api/v1/courses/lessons/<id>/complete/`
 
 ### 🧪 Quizzes
-- `GET /api/v1/quizzes/<course_id>/`
-- `GET /api/v1/quizzes/<id>/`
-- `POST /api/v1/quizzes/<id>/attempt/`
-- `POST /api/v1/quizzes/<id>/submit/`
+- `GET /api/v1/quizzes/courses/<course_id>/quizzes/` - Get all quizzes for a course
+- `GET /api/v1/quizzes/quizzes/<id>/` - Get a specific quiz
+- `POST /api/v1/quizzes/quizzes/<id>/start/` - Start a quiz attempt
+- `POST /api/v1/quizzes/quizzes/<id>/submit/` - Submit quiz answers
+- `GET /api/v1/quizzes/quizzes/<id>/statistics/` - Get quiz statistics
 
 ### 🏅 Achievements
 - `GET /api/v1/achievements/`

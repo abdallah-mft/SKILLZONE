@@ -17,8 +17,17 @@ def courses_list(request):
         difficulty = request.GET.get('difficulty')
         search = request.GET.get('search')
         course_type = request.GET.get('type')
-        page = int(request.GET.get('page', 1))
-        per_page = int(request.GET.get('per_page', 10))
+        
+        # Safely convert page and per_page to integers with defaults
+        try:
+            page = int(request.GET.get('page', 1))
+        except (ValueError, TypeError):
+            page = 1
+            
+        try:
+            per_page = int(request.GET.get('per_page', 10))
+        except (ValueError, TypeError):
+            per_page = 10
 
         # Base queryset
         courses = Course.objects.all()
@@ -35,13 +44,13 @@ def courses_list(request):
                 Q(title__icontains=search) |
                 Q(description__icontains=search)
             )
-
-        # Get unique categories and tags for filters
+            
+        # Make sure all_categories and all_tags are defined
         all_categories = Course.objects.values_list('category', flat=True).distinct()
         all_tags = set()
-        for tags in Course.objects.values_list('tags', flat=True):
-            if tags:
-                all_tags.update(tag.strip() for tag in tags.split(','))
+        for tags_str in Course.objects.values_list('tags', flat=True).distinct():
+            if tags_str:
+                all_tags.update([tag.strip() for tag in tags_str.split(',')])
 
         # Calculate pagination
         total = courses.count()
@@ -50,6 +59,14 @@ def courses_list(request):
         courses = courses[start:end]
 
         serializer = CourseSerializer(courses, many=True, context={'request': request})
+        
+        # Safely get user points
+        user_points = 0
+        try:
+            if hasattr(request.user, 'profile'):
+                user_points = request.user.profile.points
+        except Exception:
+            pass
 
         return Response({
             "success": True,
@@ -62,7 +79,7 @@ def courses_list(request):
                     'per_page': per_page,
                     'total_pages': (total + per_page - 1) // per_page
                 },
-                'user_points': request.user.profile.points,
+                'user_points': user_points,
                 'filters': {
                     'categories': list(all_categories),
                     'tags': list(all_tags),

@@ -76,6 +76,7 @@ def register(request):
             user_data = validated_data.copy()
             user_data.pop('password2', None)
             user_data.pop('accept_terms', None)
+            is_teacher = user_data.pop('is_teacher', False)
             password = user_data.pop('password', None)
             
             logger.info(f"Creating user with data: {user_data}")
@@ -86,6 +87,12 @@ def register(request):
                 **user_data
             )
             logger.info(f"User created successfully with ID: {user.id}")
+            
+            # Set is_teacher on the profile
+            profile = user.profile
+            profile.is_teacher = is_teacher
+            profile.save()
+            logger.info(f"Profile updated with is_teacher={is_teacher}")
 
             # Send verification email
             try:
@@ -104,7 +111,8 @@ def register(request):
                 'message': 'Registration successful. Please check your email for verification code.',
                 'data': {
                     'email': user.email,
-                    'requires_verification': True
+                    'requires_verification': True,
+                    'is_teacher': is_teacher
                 },
                 'errors': None
             }, status=status.HTTP_201_CREATED)

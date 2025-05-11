@@ -1,9 +1,16 @@
 from django.test import TestCase, TransactionTestCase
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from courses.models import Course, Lesson, UnlockedCourse, CourseProgress
+from courses.models import Course, Lesson, UnlockedCourse, UserCourseProgress
 from django.contrib.auth import get_user_model
 from users.models import Profile
+from django.test import TestCase
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
+from courses.models import Course
+import io
+from PIL import Image
 
 class CourseModelTest(TestCase):
     @classmethod
@@ -149,3 +156,79 @@ class CoursePointsTestCase(TransactionTestCase):
             self.profile.points,
             initial_points + self.course.points_reward
         )
+
+class CourseUploadTest(TestCase):
+    def setUp(self):
+        # Create admin user
+        self.admin_user = get_user_model().objects.create_user(
+            username='adminuser',
+            password='adminpass123',
+            is_staff=True
+        )
+        
+        # Create regular user (for permission testing)
+        self.regular_user = get_user_model().objects.create_user(
+            username='regularuser',
+            password='userpass123'
+        )
+        
+        # Set up API client
+        self.client = APIClient()
+        
+    def generate_test_image(self):
+        # Create a simple test image
+        file = io.BytesIO()
+        image = Image.new('RGB', (100, 100), color='red')
+        image.save(file, 'png')
+        file.name = 'test.png'
+        file.seek(0)
+        return file
+        
+    def test_upload_course_success(self):
+        # Authenticate as admin
+        self.client.force_authenticate(user=self.admin_user)
+        
+        # Prepare course data
+        course_data = {
+            'title': 'Test Course',
+            'description': 'Test Description',
+            'course_type': 'SOFT',
+            'difficulty_level': 'BEGINNER',
+            'points_required': 0,
+            'points_reward': 100,
+            'duration': 60,
+            'category': 'Testing',
+            'tags': 'test,api,django',
+            'image': self.generate_test_image(),
+            'lessons': '[{"title": "Lesson 1", "duration": 15, "video_url": "https://example.com/video1"}]'
+        }
+        
+        # Make request
+        url = reverse('upload-course')
+        response = self.client.post(url, course_data, format='multipart')
+        
+        # Assert response
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.data['success'])
+        self.assertEqual(Course.objects.count(), 1)
+        
+    def test_upload_course_unauthorized(self):
+        # Authenticate as regular user
+        self.client.force_authenticate(user=self.regular_user)
+        
+        # Prepare minimal course data
+        course_data = {
+            'title': 'Test Course',
+            'description': 'Test Description',
+            'course_type': 'SOFT',
+            'difficulty_level': 'BEGINNER'
+        }
+        
+        # Make request
+        url = reverse('upload-course')
+        response = self.client.post(url, course_data, format='json')
+        
+        # Assert response
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(response.data['success'])
+        self.assertEqual(Course.objects.count(), 0)

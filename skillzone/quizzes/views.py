@@ -13,6 +13,7 @@ from .serializers import (
 from django.urls import get_resolver
 from django.db import transaction
 from django.core.cache import cache
+from users.models import Profile
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -265,4 +266,4 @@ def award_achievements(attempt):
         if total_bonus_points > 0:
             profile.add_points(total_bonus_points)
             
-        return achievements
+        return achievements, total_bonus_points

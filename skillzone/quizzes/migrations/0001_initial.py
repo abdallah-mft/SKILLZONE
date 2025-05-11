@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('courses', '0001_initial'),
-        ('users', '0001_initial'),
+        ('users', '0010_profile_is_teacher'),  # Updated to use the latest applied migration
     ]
 
     operations = [

@@ -23,6 +23,7 @@ class Course(models.Model):
     duration = models.IntegerField(default=0)  # Duration in minutes
     course_type = models.CharField(max_length=10, choices=COURSE_TYPES)
     points_reward = models.IntegerField(default=0)  # Points reward for completing the course
+    points_required = models.IntegerField(default=0)  # Points required to unlock the course
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Only for HARD skills
     
     # Additional fields for backend functionality

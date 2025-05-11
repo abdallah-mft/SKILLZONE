@@ -152,6 +152,7 @@ POST /api/v1/token/refresh/
 ### 📘 Courses
 - `GET /api/v1/courses/`
 - `GET /api/v1/courses/<id>/`
+- `GET /api/v1/courses/<id>/lessons/` - Get all lessons for a specific course
 - `POST /api/v1/courses/<id>/unlock/`
 - `GET /api/v1/courses/<id>/statistics/`
 - `GET /api/v1/courses/inventory/` - Get all courses unlocked by the user

@@ -637,3 +637,44 @@ def upload_course(request):
             "error_details": str(e) if settings.DEBUG else None
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def course_lessons(request, course_id):
+    """Get all lessons for a specific course"""
+    try:
+        course = get_object_or_404(Course, id=course_id)
+        lessons = Lesson.objects.filter(course=course).order_by('number')
+        
+        # Serialize the lessons
+        serializer = LessonSerializer(lessons, many=True)
+        
+        # Get user profile to check unlocked lessons
+        user_profile = request.user.profile
+        
+        # Add unlocked status to each lesson
+        lessons_data = serializer.data
+        for lesson_data in lessons_data:
+            lesson_id = lesson_data['id']
+            is_unlocked = UnlockedLesson.objects.filter(
+                user=user_profile,
+                lesson_id=lesson_id
+            ).exists()
+            lesson_data['is_unlocked'] = is_unlocked
+        
+        return Response({
+            "success": True,
+            "message": "Course lessons retrieved successfully",
+            "data": {
+                "course_id": course.id,
+                "course_title": course.title,
+                "lessons_count": lessons.count(),
+                "lessons": lessons_data
+            }
+        })
+    except Exception as e:
+        return Response({
+            "success": False,
+            "message": str(e),
+            "data": None
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

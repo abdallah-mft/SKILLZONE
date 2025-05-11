@@ -1,8 +1,6 @@
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.utils import timezone
-
-User = get_user_model()
+from users.models import Profile
 
 class Course(models.Model):
     COURSE_TYPES = [
@@ -102,15 +100,15 @@ class UserCourseProgress(models.Model):
         return f"{self.user.user.username} - {self.course.title}"
 
 class UnlockedCourse(models.Model):
-    user = models.ForeignKey('users.Profile', on_delete=models.CASCADE, related_name='unlocked_courses')
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='unlocked_courses')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='unlocked_by')
-    unlocked_at = models.DateTimeField(auto_now_add=True)
-    
+    unlocked_at = models.DateTimeField(default=timezone.now)
+
     class Meta:
         unique_together = ('user', 'course')
         verbose_name = 'Unlocked Course'
         verbose_name_plural = 'Unlocked Courses'
-    
+
     def __str__(self):
         return f"{self.user.user.username} - {self.course.title}"
 

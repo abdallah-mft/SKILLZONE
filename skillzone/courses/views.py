@@ -460,9 +460,12 @@ def user_course_inventory(request):
         
         # Add unlocked_at date to each course
         courses_data = serializer.data
-        for i, uc in enumerate(unlocked_courses):
-            if i < len(courses_data):
-                courses_data[i]['unlocked_at'] = uc.unlocked_at
+        unlocked_dates = {uc.course.id: uc.unlocked_at for uc in unlocked_courses}
+        
+        for course_data in courses_data:
+            course_id = course_data['id']
+            if course_id in unlocked_dates:
+                course_data['unlocked_at'] = unlocked_dates[course_id]
         
         # Group courses by type
         soft_courses = [c for c in courses_data if c.get('course_type') == 'SOFT']

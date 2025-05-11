@@ -440,3 +440,56 @@ def mark_lesson_complete(request, lesson_id):
         'progress': progress.progress_percentage
     })
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_course_inventory(request):
+    """Get all courses (SOFT and HARD) unlocked by the current user"""
+    try:
+        user_profile = request.user.profile
+        
+        # Get all unlocked courses for this user
+        unlocked_courses = UnlockedCourse.objects.filter(
+            user=user_profile
+        ).select_related('course')
+        
+        # Get the course objects
+        courses = [uc.course for uc in unlocked_courses]
+        
+        # Serialize the courses
+        serializer = CourseSerializer(courses, many=True, context={'request': request})
+        
+        # Add unlocked_at date to each course
+        courses_data = serializer.data
+        for i, uc in enumerate(unlocked_courses):
+            if i < len(courses_data):
+                courses_data[i]['unlocked_at'] = uc.unlocked_at
+        
+        # Group courses by type
+        soft_courses = [c for c in courses_data if c.get('course_type') == 'SOFT']
+        hard_courses = [c for c in courses_data if c.get('course_type') == 'HARD']
+        
+        return Response({
+            "success": True,
+            "message": "Course inventory retrieved successfully",
+            "data": {
+                "courses": courses_data,
+                "soft_courses": soft_courses,
+                "hard_courses": hard_courses,
+                "total_count": len(courses_data),
+                "soft_count": len(soft_courses),
+                "hard_count": len(hard_courses),
+                "user_points": user_profile.points
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        logger.error(f"Error retrieving course inventory: {str(e)}")
+        logger.error(traceback.format_exc())
+        return Response({
+            "success": False,
+            "message": str(e),
+            "data": None,
+            "error_details": traceback.format_exc() if settings.DEBUG else None
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

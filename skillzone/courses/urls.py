@@ -8,4 +8,5 @@ urlpatterns = [
     path('lessons/<int:lesson_id>/complete/', views.mark_lesson_complete, name='complete-lesson'),
     path('<int:course_id>/unlock/', views.unlock_course, name='unlock-course'),
     path('<int:course_id>/statistics/', views.course_statistics, name='course-statistics'),
+    path('inventory/', views.user_course_inventory, name='user-course-inventory'),  # New inventory endpoint
 ]

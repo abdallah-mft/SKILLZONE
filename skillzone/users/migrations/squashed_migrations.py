@@ -1,9 +1,12 @@
+# Rename this file to a proper migration number
+# For example, rename to 0016_squashed_migrations.py
+
 from django.db import migrations, models
 import django.db.models.deletion
 from django.conf import settings
-import uuid
 
 class Migration(migrations.Migration):
+    # Keep the replaces attribute to indicate this is a squashed migration
     replaces = [
         ('users', '0001_initial'),
         ('users', '0002_remove_profile_users_profi_user_id_783607_idx_and_more'),
@@ -21,8 +24,6 @@ class Migration(migrations.Migration):
         ('users', '0014_profile_is_teacher'),
         ('users', '0015_acknowledge_is_teacher'),
     ]
-
-    initial = True
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

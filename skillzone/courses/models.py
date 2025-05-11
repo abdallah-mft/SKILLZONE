@@ -24,6 +24,9 @@ class Course(models.Model):
     points_required = models.IntegerField(default=0)  # Points required to unlock the course
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Only for HARD skills
     
+    # Image field - use thumbnail if it exists, otherwise add this
+    image = models.ImageField(upload_to='courses/images/', blank=True, null=True)
+    
     # Additional fields for backend functionality
     difficulty_level = models.CharField(max_length=15, choices=DIFFICULTY_LEVELS, default='BEGINNER')
     category = models.CharField(max_length=100, default='General')

@@ -10,12 +10,22 @@ class CourseSerializer(serializers.ModelSerializer):
     lessons_count = serializers.SerializerMethodField()
     is_unlocked = serializers.SerializerMethodField()
     progress = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()  # Custom field
     
     class Meta:
         model = Course
         fields = ['id', 'title', 'description', 'image', 'category', 'difficulty_level', 
                   'course_type', 'points_reward', 'points_required', 'lessons_count', 
                   'is_unlocked', 'progress', 'created_at', 'updated_at']
+    
+    def get_image(self, obj):
+        """Return the thumbnail URL as 'image'"""
+        request = self.context.get('request')
+        if obj.thumbnail and hasattr(obj.thumbnail, 'url'):
+            if request:
+                return request.build_absolute_uri(obj.thumbnail.url)
+            return obj.thumbnail.url
+        return None
     
     def get_lessons_count(self, obj):
         return obj.lessons.count()

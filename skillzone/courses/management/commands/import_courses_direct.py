@@ -70,7 +70,7 @@ class Command(BaseCommand):
                     points_value,
                     course_data.get('duration', 0),
                     str(course_data.get('price', '0.00')),  # Changed to string
-                    str(course_data.get('rating', '0.0')),  # Changed to string
+                    float(course_data.get('rating', 0.0)),  # Keep as float
                 ])
                 
                 course_id = cursor.fetchone()[0]
@@ -104,4 +104,5 @@ class Command(BaseCommand):
                     ])
                 
                 self.stdout.write(f'    Created lesson: {lesson_data.get("title", "")}')
+
 

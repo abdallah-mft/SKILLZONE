@@ -36,14 +36,14 @@ class CourseModelTest(TestCase):
             course_type="HARD",
             points_required=1000,
             points=200,  # Changed from points_reward
-            rating="4.5",  # Changed to string
+            rating=4.5,  # Keep as float
             price="99.99",  # Changed to string
             difficulty_level="BEGINNER"
         )
         self.assertEqual(course.title, "Valid Course")
         self.assertEqual(course.points_required, 1000)
         self.assertEqual(course.points, 200)
-        self.assertEqual(course.rating, "4.5")
+        self.assertEqual(course.rating, 4.5)
         self.assertEqual(course.price, "99.99")
 
     def test_soft_course_creation(self):

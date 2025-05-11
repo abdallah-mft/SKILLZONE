@@ -581,7 +581,7 @@ def upload_course(request):
             points=int(data.get('points', 0)),  # Changed from points_reward
             duration=int(data.get('duration', 0)),
             price=str(data.get('price', '0.00')),  # Changed to string
-            rating=str(data.get('rating', '0.0')),  # Changed to string
+            rating=float(data.get('rating', 0.0)),  # Keep as float
             category=data.get('category', 'General'),
             tags=data.get('tags', '')
         )

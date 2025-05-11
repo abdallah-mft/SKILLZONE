@@ -7,10 +7,6 @@ def update_existing_courses(apps, schema_editor):
     
     # Update all existing courses
     for course in Course.objects.all():
-        # Convert rating to string
-        if isinstance(course.rating, (int, float)):
-            course.rating = str(course.rating)
-        
         # Convert price to string
         if isinstance(course.price, (int, float)):
             course.price = str(course.price)

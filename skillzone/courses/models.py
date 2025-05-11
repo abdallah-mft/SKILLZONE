@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from users.models import Profile
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class Course(models.Model):
     COURSE_TYPES = [
@@ -17,7 +18,7 @@ class Course(models.Model):
     # Fields to match frontend structure
     title = models.CharField(max_length=255)
     description = models.TextField()
-    rating = models.CharField(max_length=10, default="0.0")  # Changed to CharField
+    rating = models.FloatField(default=0.0, validators=[MinValueValidator(0.0), MaxValueValidator(5.0)])  # Keep as FloatField
     duration = models.IntegerField(default=0)  # Duration in minutes
     course_type = models.CharField(max_length=10, choices=COURSE_TYPES)
     points = models.IntegerField(default=0)  # Renamed from points_reward
@@ -42,12 +43,6 @@ class Course(models.Model):
     def type(self):
         """Return 'soft' or 'hard' to match frontend format"""
         return self.course_type.lower()
-    
-    # Remove this property since we're renaming the field directly
-    # @property
-    # def points(self):
-    #     """Return points_reward to maintain compatibility with frontend"""
-    #     return self.points_reward
     
     @property
     def lessons_count(self):

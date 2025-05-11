@@ -8,9 +8,10 @@ from django.db.models import Avg, Q
 from django.db import transaction
 from django.conf import settings
 import logging
-from .models import Course, Lesson, UnlockedCourse, UnlockedLesson, CourseProgress
-from .serializers import CourseSerializer, LessonSerializer, CourseProgressSerializer
-from quizzes.models import QuizAttempt, Quiz
+# Update imports to use only what's available
+from .models import Course, Lesson, UnlockedCourse, UnlockedLesson, UserCourseProgress
+from .serializers import CourseSerializer, LessonSerializer, UserCourseProgressSerializer
+from quizzes.models import QuizAttempt
 from users.models import Profile
 
 logger = logging.getLogger(__name__)
@@ -205,7 +206,8 @@ def unlock_course(request, course_id):
         # Deduct points and unlock course
         with transaction.atomic():
             # Deduct points
-            user_profile.deduct_points(course.points_required)
+            user_profile.points -= course.points_required
+            user_profile.save()
             
             # Create unlock record
             UnlockedCourse.objects.create(
@@ -215,7 +217,7 @@ def unlock_course(request, course_id):
             )
             
             # Create progress record
-            CourseProgress.objects.create(
+            UserCourseProgress.objects.create(
                 user=user_profile,
                 course=course
             )

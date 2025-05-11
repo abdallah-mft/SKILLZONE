@@ -76,21 +76,26 @@ class Lesson(models.Model):
         course_id = self.course.id
         return f"{course_prefix}{course_id}l{self.number}"
 
-class CourseProgress(models.Model):
-    user = models.ForeignKey('users.Profile', on_delete=models.CASCADE, related_name='course_progress')
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='progress')
+class UserCourseProgress(models.Model):
+    user = models.ForeignKey('users.Profile', on_delete=models.CASCADE, related_name='user_course_progress')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='user_progress')
+    completed_lessons = models.ManyToManyField(Lesson, related_name='completed_by')
+    is_completed = models.BooleanField(default=False)
     started_at = models.DateTimeField(auto_now_add=True)
-    last_activity = models.DateTimeField(auto_now=True)
-    completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
-    best_score = models.FloatField(default=0)
-    attempts_count = models.IntegerField(default=0)
-    total_time_spent = models.IntegerField(default=0)  # in seconds
     
     class Meta:
         unique_together = ('user', 'course')
-        verbose_name = 'Course Progress'
-        verbose_name_plural = 'Course Progress'
+        verbose_name = 'User Course Progress'
+        verbose_name_plural = 'User Course Progress'
+    
+    @property
+    def progress_percentage(self):
+        total_lessons = self.course.lessons.count()
+        if total_lessons == 0:
+            return 0
+        completed_count = self.completed_lessons.count()
+        return int((completed_count / total_lessons) * 100)
     
     def __str__(self):
         return f"{self.user.user.username} - {self.course.title}"
@@ -107,3 +112,17 @@ class UnlockedCourse(models.Model):
     
     def __str__(self):
         return f"{self.user.user.username} - {self.course.title}"
+
+class UnlockedLesson(models.Model):
+    user = models.ForeignKey('users.Profile', on_delete=models.CASCADE, related_name='unlocked_lessons')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='unlocked_by')
+    unlocked_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ('user', 'lesson')
+        verbose_name = 'Unlocked Lesson'
+        verbose_name_plural = 'Unlocked Lessons'
+    
+    def __str__(self):
+        return f"{self.user.user.username} - {self.lesson.title}"

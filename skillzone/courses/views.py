@@ -504,8 +504,29 @@ def user_course_inventory(request):
 def upload_course(request):
     """Upload a new course to the system"""
     try:
+        # Debug information
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"User: {request.user.username}")
+        logger.info(f"Is staff: {request.user.is_staff}")
+        logger.info(f"Is superuser: {request.user.is_superuser}")
+        logger.info(f"Has profile: {hasattr(request.user, 'profile')}")
+        
+        if hasattr(request.user, 'profile'):
+            logger.info(f"Profile: {request.user.profile}")
+            logger.info(f"Profile fields: {vars(request.user.profile)}")
+            logger.info(f"Is teacher: {getattr(request.user.profile, 'is_teacher', False)}")
+        
         # Check if user has admin privileges or is a teacher
-        if not (request.user.is_staff or request.user.is_superuser or hasattr(request.user, 'is_teacher') and request.user.is_teacher):
+        is_admin = request.user.is_staff or request.user.is_superuser
+        is_teacher = hasattr(request.user, 'profile') and getattr(request.user.profile, 'is_teacher', False)
+        
+        logger.info(f"Is admin: {is_admin}")
+        logger.info(f"Is teacher: {is_teacher}")
+        
+        if not (is_admin or is_teacher):
+            logger.info("Permission denied: User is neither admin nor teacher")
             return Response({
                 "success": False,
                 "message": "You don't have permission to upload courses",

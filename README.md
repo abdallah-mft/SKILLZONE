@@ -152,13 +152,83 @@ POST /api/v1/token/refresh/
 ### 📘 Courses
 - `GET /api/v1/courses/`
 - `GET /api/v1/courses/<id>/`
+- `GET /api/v1/courses/<id>/lessons/` - Get all lessons for a specific course
 - `POST /api/v1/courses/<id>/unlock/`
 - `GET /api/v1/courses/<id>/statistics/`
 - `GET /api/v1/courses/inventory/` - Get all courses unlocked by the user
+- `POST /api/v1/courses/upload-course/` - Upload a new course (admin only)
 
 ### 📗 Lessons
-- `POST /api/v1/courses/lessons/<id>/unlock/`
-- `POST /api/v1/courses/lessons/<id>/complete/`
+- `GET /api/v1/courses/<course_id>/lessons/` - Get all lessons for a specific course
+- `POST /api/v1/courses/lessons/<id>/unlock/` - Unlock a lesson by spending points
+- `POST /api/v1/courses/lessons/<id>/complete/` - Mark a lesson as completed
+
+#### Get Course Lessons
+```http
+GET /api/v1/courses/<course_id>/lessons/
+```
+```json
+{
+  "success": true,
+  "message": "Course lessons retrieved successfully",
+  "data": {
+    "course_id": 10,
+    "course_title": "Effective Communication Skills",
+    "lessons_count": 4,
+    "lessons": [
+      {
+        "id": 1,
+        "course": 10,
+        "title": "Understanding Communication Basics",
+        "number": 1,
+        "duration": 30,
+        "video_url": "https://www.youtube.com/watch?v=sample1"
+      },
+      {
+        "id": 2,
+        "course": 10,
+        "title": "Verbal Communication Techniques",
+        "number": 2,
+        "duration": 45,
+        "video_url": "https://www.youtube.com/watch?v=sample2"
+      }
+    ]
+  }
+}
+```
+
+#### Unlock Lesson
+```http
+POST /api/v1/courses/lessons/<id>/unlock/
+```
+```json
+{
+  "success": true,
+  "message": "Lesson unlocked successfully",
+  "data": {
+    "lesson_id": 1,
+    "course_id": 10,
+    "points_spent": 50,
+    "remaining_points": 450
+  }
+}
+```
+
+#### Complete Lesson
+```http
+POST /api/v1/courses/lessons/<id>/complete/
+```
+```json
+{
+  "success": true,
+  "message": "Lesson marked as completed",
+  "data": {
+    "lesson_id": 1,
+    "course_id": 10,
+    "completed_at": "2023-06-15T14:30:45Z"
+  }
+}
+```
 
 ### 🧪 Quizzes
 - `GET /api/v1/quizzes/courses/<course_id>/quizzes/` - Get all quizzes for a course

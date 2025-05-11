@@ -1,0 +1,1 @@
+pg_dump -h your-db-host -U your-db-user -d your-db-name --schema-only > db_schema.txt

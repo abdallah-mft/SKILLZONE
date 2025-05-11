@@ -45,6 +45,7 @@ class Profile(models.Model):
     bio = models.TextField(max_length=500, blank=True)
     notification_preferences = models.JSONField(default=dict)
     points = models.IntegerField(default=0)
+    is_teacher = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

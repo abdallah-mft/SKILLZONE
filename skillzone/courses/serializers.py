@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Lesson, UserCourseProgress
+from .models import Course, Lesson, UserCourseProgress, CourseProgress
 
 class LessonSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,3 +29,9 @@ class UserCourseProgressSerializer(serializers.ModelSerializer):
             'id', 'user', 'course', 'completed_lessons', 
             'is_completed', 'started_at', 'completed_at', 'progress_percentage'
         ]
+
+class CourseProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseProgress
+        fields = ['id', 'course', 'started_at', 'last_activity', 'completed', 
+                  'completed_at', 'best_score', 'attempts_count', 'total_time_spent']

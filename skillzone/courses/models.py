@@ -76,24 +76,34 @@ class Lesson(models.Model):
         course_id = self.course.id
         return f"{course_prefix}{course_id}l{self.number}"
 
-class UserCourseProgress(models.Model):
-    user = models.ForeignKey(User, related_name='course_progress', on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, related_name='user_progress', on_delete=models.CASCADE)
-    completed_lessons = models.ManyToManyField(Lesson, related_name='completed_by')
-    is_completed = models.BooleanField(default=False)
+class CourseProgress(models.Model):
+    user = models.ForeignKey('users.Profile', on_delete=models.CASCADE, related_name='course_progress')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='progress')
     started_at = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
+    completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
+    best_score = models.FloatField(default=0)
+    attempts_count = models.IntegerField(default=0)
+    total_time_spent = models.IntegerField(default=0)  # in seconds
     
     class Meta:
-        unique_together = ['user', 'course']
+        unique_together = ('user', 'course')
+        verbose_name = 'Course Progress'
+        verbose_name_plural = 'Course Progress'
     
     def __str__(self):
-        return f"{self.user.username} - {self.course.title}"
+        return f"{self.user.user.username} - {self.course.title}"
+
+class UnlockedCourse(models.Model):
+    user = models.ForeignKey('users.Profile', on_delete=models.CASCADE, related_name='unlocked_courses')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='unlocked_by')
+    unlocked_at = models.DateTimeField(auto_now_add=True)
     
-    @property
-    def progress_percentage(self):
-        total_lessons = self.course.lessons.count()
-        if total_lessons == 0:
-            return 0
-        completed = self.completed_lessons.count()
-        return int((completed / total_lessons) * 100)
+    class Meta:
+        unique_together = ('user', 'course')
+        verbose_name = 'Unlocked Course'
+        verbose_name_plural = 'Unlocked Courses'
+    
+    def __str__(self):
+        return f"{self.user.user.username} - {self.course.title}"

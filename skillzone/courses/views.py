@@ -5,9 +5,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db.models import Avg, Q
+from django.db import transaction
+from django.conf import settings
+import logging
 from .models import Course, Lesson, UnlockedCourse, UnlockedLesson, CourseProgress
-from .serializers import CourseSerializer, LessonSerializer
-from quizzes.models import QuizAttempt
+from .serializers import CourseSerializer, LessonSerializer, CourseProgressSerializer
+from quizzes.models import QuizAttempt, Quiz
+from users.models import Profile
+
+logger = logging.getLogger(__name__)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -170,71 +176,68 @@ def unlock_lesson(request, lesson_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def unlock_course(request, course_id):
-    """Unlock a HARD skill course and all its lessons by spending points"""
+    """Unlock a premium course"""
     try:
         course = get_object_or_404(Course, id=course_id)
         user_profile = request.user.profile
-
-        # Check if it's a HARD skill course
-        if course.course_type != 'HARD':
-            return Response({
-                "success": False,
-                "message": "Only HARD skill courses need to be unlocked",
-                "data": None
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Check if already unlocked
-        if UnlockedCourse.objects.filter(user=user_profile, course=course).exists():
+        
+        # Check if course is already unlocked
+        already_unlocked = UnlockedCourse.objects.filter(
+            user=user_profile,
+            course=course
+        ).exists()
+        
+        if already_unlocked:
             return Response({
                 "success": False,
                 "message": "Course already unlocked",
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Check points only if required
-        if course.points_required > 0:
-            if user_profile.points < course.points_required:
-                return Response({
-                    "success": False,
-                    "message": f"Not enough points. Required: {course.points_required}, Available: {user_profile.points}",
-                    "data": None
-                }, status=status.HTTP_400_BAD_REQUEST)
-
+        
+        # Check if user has enough points
+        if user_profile.points < course.points_required:
+            return Response({
+                "success": False,
+                "message": f"Not enough points. Required: {course.points_required}, Available: {user_profile.points}",
+                "data": None
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Deduct points and unlock course
+        with transaction.atomic():
             # Deduct points
-            user_profile.points -= course.points_required
-            user_profile.save()
-
-        # Create course unlock record
-        UnlockedCourse.objects.create(
-            user=user_profile,
-            course=course,
-            points_spent=course.points_required
-        )
-
-        # Automatically unlock all lessons in the course
-        lessons = course.lessons.all()
-        for lesson in lessons:
-            UnlockedLesson.objects.get_or_create(
+            user_profile.deduct_points(course.points_required)
+            
+            # Create unlock record
+            UnlockedCourse.objects.create(
                 user=user_profile,
-                lesson=lesson
+                course=course,
+                unlocked_at=timezone.now()
             )
-
+            
+            # Create progress record
+            CourseProgress.objects.create(
+                user=user_profile,
+                course=course
+            )
+        
         return Response({
             "success": True,
-            "message": "Course and all lessons unlocked successfully",
+            "message": "Course unlocked successfully",
             "data": {
-                "remaining_points": user_profile.points,
                 "course_id": course.id,
-                "points_spent": course.points_required,
-                "lessons_unlocked": lessons.count()
+                "points_remaining": user_profile.points
             }
         })
-
+        
     except Exception as e:
+        import traceback
+        logger.error(f"Error unlocking course {course_id}: {str(e)}")
+        logger.error(traceback.format_exc())
         return Response({
             "success": False,
             "message": str(e),
-            "data": None
+            "data": None,
+            "error_details": traceback.format_exc() if settings.DEBUG else None
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])

@@ -195,18 +195,24 @@ def unlock_course(request, course_id):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # Get points required (default to 0 if not set)
+        points_required = getattr(course, 'points_required', 0)
+        if points_required == 0 and course.course_type == 'HARD':
+            # Default value for HARD courses if not set
+            points_required = 1000
+        
         # Check if user has enough points
-        if user_profile.points < course.points_required:
+        if user_profile.points < points_required:
             return Response({
                 "success": False,
-                "message": f"Not enough points. Required: {course.points_required}, Available: {user_profile.points}",
+                "message": f"Not enough points. Required: {points_required}, Available: {user_profile.points}",
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Deduct points and unlock course
         with transaction.atomic():
             # Deduct points
-            user_profile.points -= course.points_required
+            user_profile.points -= points_required
             user_profile.save()
             
             # Create unlock record

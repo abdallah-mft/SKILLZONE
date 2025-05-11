@@ -504,8 +504,8 @@ def user_course_inventory(request):
 def upload_course(request):
     """Upload a new course to the system"""
     try:
-        # Check if user has admin privileges
-        if not request.user.is_staff and not request.user.is_superuser:
+        # Check if user has admin privileges or is a teacher
+        if not (request.user.is_staff or request.user.is_superuser or hasattr(request.user, 'is_teacher') and request.user.is_teacher):
             return Response({
                 "success": False,
                 "message": "You don't have permission to upload courses",

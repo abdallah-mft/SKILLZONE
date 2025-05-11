@@ -17,12 +17,12 @@ class Course(models.Model):
     # Fields to match frontend structure
     title = models.CharField(max_length=255)
     description = models.TextField()
-    rating = models.FloatField(default=0.0)
+    rating = models.CharField(max_length=10, default="0.0")  # Changed to CharField
     duration = models.IntegerField(default=0)  # Duration in minutes
     course_type = models.CharField(max_length=10, choices=COURSE_TYPES)
-    points_reward = models.IntegerField(default=0)  # Points reward for completing the course
+    points = models.IntegerField(default=0)  # Renamed from points_reward
     points_required = models.IntegerField(default=0)  # Points required to unlock the course
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Only for HARD skills
+    price = models.CharField(max_length=20, default="0.00")  # Changed to CharField
     
     # Image field - use thumbnail if it exists, otherwise add this
     image = models.ImageField(upload_to='courses/images/', blank=True, null=True)
@@ -43,10 +43,11 @@ class Course(models.Model):
         """Return 'soft' or 'hard' to match frontend format"""
         return self.course_type.lower()
     
-    @property
-    def points(self):
-        """Return points_reward to maintain compatibility with frontend"""
-        return self.points_reward
+    # Remove this property since we're renaming the field directly
+    # @property
+    # def points(self):
+    #     """Return points_reward to maintain compatibility with frontend"""
+    #     return self.points_reward
     
     @property
     def lessons_count(self):

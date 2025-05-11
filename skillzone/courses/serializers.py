@@ -14,8 +14,9 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = ['id', 'title', 'description', 'category', 'difficulty_level', 
-                  'course_type', 'points_reward', 'points_required', 'lessons_count', 
-                  'is_unlocked', 'progress', 'created_at', 'updated_at']
+                  'course_type', 'points', 'points_required', 'lessons_count', 
+                  'is_unlocked', 'progress', 'created_at', 'updated_at',
+                  'rating', 'price', 'duration', 'type']
     
     def get_lessons_count(self, obj):
         return obj.lessons.count()

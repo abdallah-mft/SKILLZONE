@@ -35,11 +35,16 @@ class CourseModelTest(TestCase):
             description="Test Description",
             course_type="HARD",
             points_required=1000,
-            points_reward=200,
+            points=200,  # Changed from points_reward
+            rating="4.5",  # Changed to string
+            price="99.99",  # Changed to string
             difficulty_level="BEGINNER"
         )
         self.assertEqual(course.title, "Valid Course")
         self.assertEqual(course.points_required, 1000)
+        self.assertEqual(course.points, 200)
+        self.assertEqual(course.rating, "4.5")
+        self.assertEqual(course.price, "99.99")
 
     def test_soft_course_creation(self):
         """Test that SOFT courses don't require points"""
@@ -147,14 +152,14 @@ class CoursePointsTestCase(TransactionTestCase):
         progress.completed_lessons.add(self.lesson1, self.lesson2)
         
         # Award points
-        self.profile.points += self.course.points_reward
+        self.profile.points += self.course.points
         self.profile.save()
         
         # Verify points reward
         self.profile.refresh_from_db()
         self.assertEqual(
             self.profile.points,
-            initial_points + self.course.points_reward
+            initial_points + self.course.points
         )
 
 class CourseUploadTest(TestCase):

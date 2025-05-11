@@ -56,7 +56,7 @@ class Command(BaseCommand):
                 cursor.execute("""
                     INSERT INTO courses_course (
                         title, description, course_type, points_required, category, 
-                        tags, difficulty_level, points_reward, duration, price, rating
+                        tags, difficulty_level, points, duration, price, rating
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                 """, [
@@ -69,8 +69,8 @@ class Command(BaseCommand):
                     difficulty,
                     points_value,
                     course_data.get('duration', 0),
-                    course_data.get('price', 0.00) if course_type == 'HARD' else 0.00,
-                    course_data.get('rating', 0.0)
+                    str(course_data.get('price', '0.00')),  # Changed to string
+                    str(course_data.get('rating', '0.0')),  # Changed to string
                 ])
                 
                 course_id = cursor.fetchone()[0]
@@ -104,3 +104,4 @@ class Command(BaseCommand):
                     ])
                 
                 self.stdout.write(f'    Created lesson: {lesson_data.get("title", "")}')
+

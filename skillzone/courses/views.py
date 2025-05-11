@@ -220,8 +220,7 @@ def unlock_course(request, course_id):
             # Create unlock record
             UnlockedCourse.objects.create(
                 user=user_profile,
-                course=course,
-                unlocked_at=timezone.now()
+                course=course
             )
             
             # Create progress record
@@ -579,9 +578,10 @@ def upload_course(request):
             course_type=course_type,
             difficulty_level=difficulty_level,
             points_required=int(data.get('points_required', 0)),
-            points_reward=int(data.get('points_reward', 0)),
+            points=int(data.get('points', 0)),  # Changed from points_reward
             duration=int(data.get('duration', 0)),
-            price=float(data.get('price', 0.0)) if course_type == 'HARD' else 0.0,
+            price=str(data.get('price', '0.00')),  # Changed to string
+            rating=str(data.get('rating', '0.0')),  # Changed to string
             category=data.get('category', 'General'),
             tags=data.get('tags', '')
         )

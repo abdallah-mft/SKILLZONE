@@ -648,19 +648,6 @@ def course_lessons(request, course_id):
         # Serialize the lessons
         serializer = LessonSerializer(lessons, many=True)
         
-        # Get user profile to check unlocked lessons
-        user_profile = request.user.profile
-        
-        # Add unlocked status to each lesson
-        lessons_data = serializer.data
-        for lesson_data in lessons_data:
-            lesson_id = lesson_data['id']
-            is_unlocked = UnlockedLesson.objects.filter(
-                user=user_profile,
-                lesson_id=lesson_id
-            ).exists()
-            lesson_data['is_unlocked'] = is_unlocked
-        
         return Response({
             "success": True,
             "message": "Course lessons retrieved successfully",
@@ -668,7 +655,7 @@ def course_lessons(request, course_id):
                 "course_id": course.id,
                 "course_title": course.title,
                 "lessons_count": lessons.count(),
-                "lessons": lessons_data
+                "lessons": serializer.data
             }
         })
     except Exception as e:

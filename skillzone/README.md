@@ -12,6 +12,7 @@ SkillZone is a full-stack learning platform using Django REST Framework and Flut
 - Points-based reward system
 - Course categories and tags
 - Difficulty levels (BEGINNER, INTERMEDIATE, ADVANCED)
+- User course inventory for tracking unlocked courses
 
 ### Quiz System
 - Course-specific quizzes
@@ -153,6 +154,7 @@ POST /api/v1/token/refresh/
 - `GET /api/v1/courses/<id>/`
 - `POST /api/v1/courses/<id>/unlock/`
 - `GET /api/v1/courses/<id>/statistics/`
+- `GET /api/v1/courses/inventory/` - Get all courses unlocked by the user
 
 ### 📗 Lessons
 - `POST /api/v1/courses/lessons/<id>/unlock/`

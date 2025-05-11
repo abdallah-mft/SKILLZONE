@@ -155,6 +155,7 @@ POST /api/v1/token/refresh/
 - `POST /api/v1/courses/<id>/unlock/`
 - `GET /api/v1/courses/<id>/statistics/`
 - `GET /api/v1/courses/inventory/` - Get all courses unlocked by the user
+- `POST /api/v1/courses/upload-course/` - Upload a new course (admin only)
 
 ### 📗 Lessons
 - `POST /api/v1/courses/lessons/<id>/unlock/`

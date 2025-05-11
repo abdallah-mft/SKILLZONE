@@ -1,6 +1,6 @@
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -13,6 +13,8 @@ from .models import Course, Lesson, UnlockedCourse, UnlockedLesson, UserCoursePr
 from .serializers import CourseSerializer, LessonSerializer, UserCourseProgressSerializer
 from quizzes.models import QuizAttempt
 from users.models import Profile
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.core.validators import ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -494,5 +496,123 @@ def user_course_inventory(request):
             "message": str(e),
             "data": None,
             "error_details": traceback.format_exc() if settings.DEBUG else None
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
+def upload_course(request):
+    """Upload a new course to the system"""
+    try:
+        # Check if user has admin privileges
+        if not request.user.is_staff and not request.user.is_superuser:
+            return Response({
+                "success": False,
+                "message": "You don't have permission to upload courses",
+                "data": None
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get data from request
+        data = request.data
+        
+        # Validate required fields
+        required_fields = ['title', 'description', 'course_type', 'difficulty_level']
+        for field in required_fields:
+            if field not in data:
+                return Response({
+                    "success": False,
+                    "message": f"Missing required field: {field}",
+                    "data": None
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate course type
+        course_type = data.get('course_type').upper()
+        if course_type not in [choice[0] for choice in Course.COURSE_TYPES]:
+            return Response({
+                "success": False,
+                "message": f"Invalid course type. Must be one of: {', '.join([choice[0] for choice in Course.COURSE_TYPES])}",
+                "data": None
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate difficulty level
+        difficulty_level = data.get('difficulty_level').upper()
+        if difficulty_level not in [choice[0] for choice in Course.DIFFICULTY_LEVELS]:
+            return Response({
+                "success": False,
+                "message": f"Invalid difficulty level. Must be one of: {', '.join([choice[0] for choice in Course.DIFFICULTY_LEVELS])}",
+                "data": None
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # For HARD courses, points_required is mandatory
+        if course_type == 'HARD' and (not data.get('points_required') or int(data.get('points_required', 0)) <= 0):
+            return Response({
+                "success": False,
+                "message": "HARD courses must have points_required greater than 0",
+                "data": None
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create the course
+        course = Course(
+            title=data.get('title'),
+            description=data.get('description'),
+            course_type=course_type,
+            difficulty_level=difficulty_level,
+            points_required=int(data.get('points_required', 0)),
+            points_reward=int(data.get('points_reward', 0)),
+            duration=int(data.get('duration', 0)),
+            price=float(data.get('price', 0.0)) if course_type == 'HARD' else 0.0,
+            category=data.get('category', 'General'),
+            tags=data.get('tags', '')
+        )
+        
+        # Handle image upload if provided
+        if 'image' in request.FILES:
+            course.image = request.FILES['image']
+        
+        # Save the course
+        course.save()
+        
+        # Handle lessons if provided
+        lessons_data = data.get('lessons', [])
+        if isinstance(lessons_data, str):
+            try:
+                import json
+                lessons_data = json.loads(lessons_data)
+            except json.JSONDecodeError:
+                lessons_data = []
+        
+        for i, lesson_data in enumerate(lessons_data):
+            lesson = Lesson(
+                course=course,
+                title=lesson_data.get('title', f'Lesson {i+1}'),
+                number=i+1,
+                duration=int(lesson_data.get('duration', 0)),
+                video_url=lesson_data.get('video_url', '')
+            )
+            lesson.save()
+        
+        # Return the created course
+        serializer = CourseSerializer(course, context={'request': request})
+        return Response({
+            "success": True,
+            "message": "Course uploaded successfully",
+            "data": serializer.data
+        }, status=status.HTTP_201_CREATED)
+        
+    except ValidationError as e:
+        return Response({
+            "success": False,
+            "message": str(e),
+            "data": None
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        import traceback
+        logger.error(f"Error uploading course: {str(e)}")
+        logger.error(traceback.format_exc())
+        return Response({
+            "success": False,
+            "message": "An error occurred while uploading the course",
+            "data": None,
+            "error_details": str(e) if settings.DEBUG else None
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

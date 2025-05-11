@@ -5,6 +5,9 @@ urlpatterns = [
     # Put the inventory endpoint first to avoid conflicts
     path('inventory/', views.user_course_inventory, name='user-course-inventory'),
     
+    # Add the upload course endpoint
+    path('upload-course/', views.upload_course, name='upload-course'),
+    
     # Then the other endpoints
     path('', views.courses_list, name='courses_list'),
     path('<int:course_id>/', views.course_detail, name='course_detail'),

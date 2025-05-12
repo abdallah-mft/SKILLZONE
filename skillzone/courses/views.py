@@ -223,9 +223,9 @@ def unlock_course(request, course_id):
                 course=course
             )
             
-            # Create progress record
+            # Create progress record - Make sure to use user_profile here
             UserCourseProgress.objects.create(
-                user=user_profile,
+                user=user_profile,  # This should be a Profile instance, not User
                 course=course
             )
         

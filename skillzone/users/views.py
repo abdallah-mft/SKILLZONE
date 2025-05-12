@@ -209,8 +209,14 @@ def login(request):
 def get_profile(request):
     """Fetches user profile details"""
     profile = get_object_or_404(Profile, user=request.user)
-    serializer = ProfileSerializer(profile)
-    return Response(serializer.data)
+    profile_data = ProfileSerializer(profile).data
+    
+    # Add user fields to the response
+    profile_data['username'] = request.user.username
+    profile_data['first_name'] = request.user.first_name
+    profile_data['last_name'] = request.user.last_name
+    
+    return Response(profile_data)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

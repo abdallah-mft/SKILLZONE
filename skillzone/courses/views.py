@@ -468,20 +468,17 @@ def user_course_inventory(request):
             if course_id in unlocked_dates:
                 course_data['unlocked_at'] = unlocked_dates[course_id]
         
-        # Group courses by type
-        soft_courses = [c for c in courses_data if c.get('course_type') == 'SOFT']
-        hard_courses = [c for c in courses_data if c.get('course_type') == 'HARD']
+        # Count courses by type
+        soft_count = sum(1 for c in courses_data if c.get('course_type') == 'SOFT')
+        hard_count = sum(1 for c in courses_data if c.get('course_type') == 'HARD')
         
         return Response({
             "success": True,
             "message": "Course inventory retrieved successfully",
             "data": {
                 "courses": courses_data,
-                "soft_courses": soft_courses,
-                "hard_courses": hard_courses,
-                "total_count": len(courses_data),
-                "soft_count": len(soft_courses),
-                "hard_count": len(hard_courses),
+                "soft_count": soft_count,
+                "hard_count": hard_count,
                 "user_points": user_profile.points
             }
         })

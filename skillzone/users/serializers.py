@@ -18,14 +18,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     accept_terms = serializers.BooleanField(write_only=True, required=True)
     email = serializers.EmailField(required=True)
     is_teacher = serializers.BooleanField(required=False, default=False)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
 
     class Meta:
         model = User
         fields = ('username', 'email', 'password', 'password2', 'accept_terms', 'first_name', 'last_name', 'is_teacher')
-        extra_kwargs = {
-            'first_name': {'required': False},
-            'last_name': {'required': False}
-        }
 
     def validate(self, data):
         errors = {}

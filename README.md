@@ -2,6 +2,8 @@
   <img src="assets/logo.png" alt="SkillZone Logo" width="200"/>
 </p>
 
+
+
 # 🎓 SkillZone Learning Platform
 
 SkillZone is a full-stack learning platform using Django REST Framework and Flutter. It delivers free (SOFT) and premium (HARD) courses, complete with user achievements, quizzes, progress tracking, and a gamified reward system.

@@ -342,7 +342,7 @@ python manage.py test
 5. Open Pull Request
 
 ## 📄 License
-
+This project is part of academic coursework and is subject to university/college guidelines.
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 👥 Authors

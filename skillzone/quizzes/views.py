@@ -37,7 +37,7 @@ def start_quiz(request, quiz_id):
     """Start a new quiz attempt with randomization"""
     quiz = get_object_or_404(Quiz, id=quiz_id)
     
-    # Check max attempts
+    
     if quiz.max_attempts > 0:
         attempt_count = QuizAttempt.objects.filter(
             quiz=quiz,
@@ -48,7 +48,7 @@ def start_quiz(request, quiz_id):
                 "error": "Maximum attempts reached"
             }, status=status.HTTP_400_BAD_REQUEST)
     
-    # Check for existing incomplete attempt
+    
     existing_attempt = QuizAttempt.objects.filter(
         quiz=quiz,
         user=request.user.profile,
@@ -69,7 +69,7 @@ def start_quiz(request, quiz_id):
                 'quiz': QuizDetailSerializer(quiz, context={'randomize': quiz.is_randomized}).data
             })
     
-    # Create new attempt
+    
     attempt = QuizAttempt.objects.create(
         quiz=quiz,
         user=request.user.profile
@@ -93,7 +93,7 @@ def submit_quiz(request, quiz_id):
         completed_at__isnull=True
     )
     
-    # Check time limit
+    
     time_elapsed = timezone.now() - attempt.started_at
     if time_elapsed.total_seconds() > quiz.time_limit:
         attempt.is_passed = False
@@ -105,7 +105,7 @@ def submit_quiz(request, quiz_id):
             'is_passed': False
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    # Process answers
+    
     answers = request.data.get('answers', {})
     total_points = 0
     max_points = 0
@@ -120,16 +120,16 @@ def submit_quiz(request, quiz_id):
             if answer.is_correct:
                 total_points += question.points
     
-    # Calculate percentage score
+    
     percentage_score = (total_points / max_points * 100) if max_points > 0 else 0
     
-    # Update attempt
+    
     attempt.score = percentage_score
     attempt.is_passed = percentage_score >= quiz.passing_score
     attempt.completed_at = timezone.now()
     attempt.save()
     
-    # Update QuizProgress
+    
     progress, _ = QuizProgress.objects.get_or_create(
         user=request.user.profile,
         quiz=quiz
@@ -142,7 +142,7 @@ def submit_quiz(request, quiz_id):
     progress.completed = attempt.is_passed
     progress.save()
     
-    # Award points and achievements
+    
     points_earned = quiz.points_reward if attempt.is_passed else 0
     if points_earned > 0:
         profile = request.user.profile
@@ -166,7 +166,7 @@ def quiz_statistics(request, quiz_id):
     """Get quiz statistics"""
     quiz = get_object_or_404(Quiz, id=quiz_id)
     
-    # Get user's best attempt
+    
     user_attempts = QuizAttempt.objects.filter(
         quiz=quiz,
         user=request.user.profile,
@@ -179,7 +179,7 @@ def quiz_statistics(request, quiz_id):
         'passed': user_attempts.filter(is_passed=True).exists()
     }
     
-    # Get overall quiz statistics
+    
     quiz_stats = quiz.get_statistics()
     
     return Response({
@@ -209,13 +209,13 @@ def award_achievements(attempt):
     quiz = attempt.quiz
     user = attempt.user
     
-    # Use select_for_update to prevent race conditions
+    
     with transaction.atomic():
         profile = Profile.objects.select_for_update().get(user=user)
         achievements = []
         total_bonus_points = 0
         
-        # Perfect Score Achievement
+        
         if attempt.score == 100:
             achievement, created = QuizAchievement.objects.get_or_create(
                 user=user,
@@ -227,7 +227,7 @@ def award_achievements(attempt):
                 achievements.append('PERFECT')
                 total_bonus_points += 50
         
-        # Speed Demon Achievement
+        
         time_taken = (attempt.completed_at - attempt.started_at).total_seconds()
         if time_taken < (quiz.time_limit * 0.5):
             achievement, created = QuizAchievement.objects.get_or_create(
@@ -240,7 +240,7 @@ def award_achievements(attempt):
                 achievements.append('FAST')
                 total_bonus_points += 30
         
-        # Winning Streak (using cached query)
+        
         cache_key = f'quiz_streak_{user.id}_{quiz.id}'
         streak_count = cache.get(cache_key, 0)
         
@@ -249,7 +249,7 @@ def award_achievements(attempt):
         else:
             streak_count = 0
         
-        cache.set(cache_key, streak_count, timeout=86400)  # 24 hours
+        cache.set(cache_key, streak_count, timeout=86400)  
         
         if streak_count >= 3:
             achievement, created = QuizAchievement.objects.get_or_create(
@@ -262,8 +262,44 @@ def award_achievements(attempt):
                 achievements.append('STREAK')
                 total_bonus_points += 40
         
-        # Add bonus points atomically
+        
         if total_bonus_points > 0:
             profile.add_points(total_bonus_points)
             
         return achievements, total_bonus_points
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def quiz_data_for_frontend(request, course_id):
+    """Get quiz data in frontend-friendly format for a specific course"""
+    # Find quiz by course ID (using integer ID)
+    quiz = Quiz.objects.filter(course_id=course_id).first()
+    
+    if not quiz:
+        return Response({"error": "Quiz not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Get all questions with their answers
+    questions = []
+    for question in quiz.questions.all():
+        options = list(question.answers.values_list('text', flat=True))
+        correct_option_index = list(question.answers.values_list('is_correct', flat=True)).index(True)
+        
+        questions.append({
+            "id": f"c{course_id}q{question.id}",
+            "question": question.text,
+            "options": options,
+            "correctOptionIndex": correct_option_index,
+            "points": question.points
+        })
+    
+    # Format response to match frontend structure
+    response_data = {
+        "id": f"c{course_id}q",
+        "courseId": str(course_id),
+        "title": quiz.title,
+        "timePerQuestion": quiz.time_limit // len(questions) if len(questions) > 0 else 30,
+        "timeUnit": "seconds",
+        "questions": questions
+    }
+    
+    return Response(response_data)

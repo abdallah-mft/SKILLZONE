@@ -77,7 +77,7 @@ class AchievementViewSet(viewsets.ReadOnlyModelViewSet):
         total_achievements = Achievement.objects.count()
         earned_achievements = user_achievements.count()
         
-        # Group by type
+        
         achievements_by_type = {}
         for achievement_type, _ in Achievement.TYPES:
             total = Achievement.objects.filter(type=achievement_type).count()
@@ -88,7 +88,7 @@ class AchievementViewSet(viewsets.ReadOnlyModelViewSet):
                 'percentage': round((earned / total * 100) if total > 0 else 0, 1)
             }
             
-        # Recent achievements
+        
         recent = UserAchievementSerializer(
             user_achievements.order_by('-earned_date')[:5], 
             many=True

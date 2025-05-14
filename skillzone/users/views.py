@@ -72,7 +72,7 @@ def register(request):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            # Remove non-user fields
+            
             user_data = validated_data.copy()
             user_data.pop('password2', None)
             user_data.pop('accept_terms', None)
@@ -81,20 +81,20 @@ def register(request):
             
             logger.info(f"Creating user with data: {user_data}")
             
-            # Create user
+            
             user = User.objects.create_user(
                 password=password,
                 **user_data
             )
             logger.info(f"User created successfully with ID: {user.id}")
             
-            # Set is_teacher on the profile
+            
             profile = user.profile
             profile.is_teacher = is_teacher
             profile.save()
             logger.info(f"Profile updated with is_teacher={is_teacher}")
 
-            # Send verification email
+            
             try:
                 send_verification_email(user)
                 logger.info("Verification email sent successfully")
@@ -162,7 +162,7 @@ def login(request):
                 'errors': {'credentials': ['Invalid credentials']}
             }, status=status.HTTP_401_UNAUTHORIZED)
 
-        # Check if email is verified
+        
         if not user.profile.email_verified:
             try:
                 send_verification_email(user)
@@ -183,7 +183,7 @@ def login(request):
                     'errors': {'email': [str(e)]}
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Email is verified, proceed with login
+        
         refresh = RefreshToken.for_user(user)
         return Response({
             'status': True,
@@ -211,7 +211,7 @@ def get_profile(request):
     profile = get_object_or_404(Profile, user=request.user)
     profile_data = ProfileSerializer(profile).data
     
-    # Add user fields to the response
+    
     profile_data['username'] = request.user.username
     profile_data['first_name'] = request.user.first_name
     profile_data['last_name'] = request.user.last_name
@@ -371,7 +371,7 @@ def change_password(request):
                 'data': None
             }, status=status.HTTP_400_BAD_REQUEST)
             
-        # Verify current password
+        
         if not user.check_password(current_password):
             return Response({
                 'success': False,
@@ -379,7 +379,7 @@ def change_password(request):
                 'data': None
             }, status=status.HTTP_400_BAD_REQUEST)
             
-        # Validate new password
+        
         if len(new_password) < 8:
             return Response({
                 'success': False,
@@ -387,11 +387,11 @@ def change_password(request):
                 'data': None
             }, status=status.HTTP_400_BAD_REQUEST)
             
-        # Update password
+        
         user.set_password(new_password)
         user.save()
         
-        # Generate new tokens
+        
         refresh = RefreshToken.for_user(user)
         
         return Response({
@@ -448,7 +448,7 @@ def password_reset_request(request):
         
     except User.DoesNotExist:
         return Response({
-            'success': True,  # Don't reveal if email exists
+            'success': True,  
             'message': 'If an account exists with this email, a password reset link has been sent.'
         })
 
@@ -460,7 +460,7 @@ def deactivate_account(request):
         user = request.user
         profile = user.profile
         
-        # Require password confirmation
+        
         password = request.data.get('password')
         if not user.check_password(password):
             return Response({
@@ -476,7 +476,7 @@ def deactivate_account(request):
             user.is_active = False
             user.save()
             
-            # Blacklist all refresh tokens
+            
             RefreshToken.for_user(user).blacklist()
             
         return Response({
@@ -504,12 +504,12 @@ def update_avatar(request):
         image_file = request.FILES['avatar']
         profile = request.user.profile
         
-        # Delete old avatar if exists
+        
         if profile.avatar:
             if os.path.exists(profile.avatar.path):
                 os.remove(profile.avatar.path)
         
-        # Process and save new avatar
+        
         avatar_path = handle_avatar_upload(image_file, request.user.id)
         profile.avatar = avatar_path
         profile.save()
@@ -544,7 +544,7 @@ def verify_email(request):
         
         if not code or not email:
             return Response({
-                'status': False,  # Changed from 'success' to 'status' for consistency
+                'status': False,  
                 'message': 'Both email and verification code are required',
                 'data': None,
                 'errors': {'validation': ['Email and code are required']}
@@ -556,7 +556,7 @@ def verify_email(request):
                 user.profile.email_verified = True
                 user.profile.save()
                 
-                # Generate tokens after verification
+                
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     'status': True,
@@ -598,18 +598,18 @@ def password_reset_confirm(request, uidb64, token):
     Confirm password reset and set new password
     """
     try:
-        # Decode the user id
+        
         uid = urlsafe_base64_decode(uidb64).decode()
         user = User.objects.get(pk=uid)
         
-        # Verify the token
+        
         if not default_token_generator.check_token(user, token):
             return JsonResponse({
                 'success': False,
                 'message': 'Invalid or expired password reset token'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get the new password from request data
+        
         new_password = request.data.get('new_password')
         if not new_password:
             return JsonResponse({
@@ -617,7 +617,7 @@ def password_reset_confirm(request, uidb64, token):
                 'message': 'New password is required'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Set the new password
+        
         user.set_password(new_password)
         user.save()
 
@@ -636,14 +636,14 @@ class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        # Validate passwords match
+        
         if request.data.get('password') != request.data.get('password2'):
             return Response({
                 'success': False,
                 'message': 'Passwords do not match'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate terms acceptance
+        
         if not request.data.get('accept_terms'):
             return Response({
                 'success': False,
@@ -690,3 +690,11 @@ class EmailVerificationView(APIView):
                 'success': False,
                 'message': 'Invalid verification token'
             }, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
+

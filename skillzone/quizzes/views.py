@@ -272,34 +272,82 @@ def award_achievements(attempt):
 @permission_classes([IsAuthenticated])
 def quiz_data_for_frontend(request, course_id):
     """Get quiz data in frontend-friendly format for a specific course"""
-    # Find quiz by course ID (using integer ID)
-    quiz = Quiz.objects.filter(course_id=course_id).first()
-    
-    if not quiz:
-        return Response({"error": "Quiz not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-    # Get all questions with their answers
-    questions = []
-    for question in quiz.questions.all():
-        options = list(question.answers.values_list('text', flat=True))
-        correct_option_index = list(question.answers.values_list('is_correct', flat=True)).index(True)
+    try:
+        # Find quiz by course ID (using integer ID)
+        quiz = Quiz.objects.filter(course_id=course_id).first()
         
-        questions.append({
-            "id": f"c{course_id}q{question.id}",
-            "question": question.text,
-            "options": options,
-            "correctOptionIndex": correct_option_index,
-            "points": question.points
-        })
+        if not quiz:
+            return Response({
+                "error": "Quiz not found",
+                "course_id": course_id,
+                "available_quizzes": list(Quiz.objects.values_list('id', 'course_id', 'title'))
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get all questions with their answers
+        questions = []
+        for question in quiz.questions.all().prefetch_related('answers'):
+            # Get all answers for this question
+            answer_objects = list(question.answers.all())
+            
+            if not answer_objects:
+                # Skip questions with no answers
+                continue
+                
+            options = [answer.text for answer in answer_objects]
+            
+            # Find the correct answer index, default to 0 if none found
+            try:
+                correct_option_index = next((i for i, answer in enumerate(answer_objects) if answer.is_correct), 0)
+            except Exception as e:
+                correct_option_index = 0
+                
+            questions.append({
+                "id": f"q{question.id}",
+                "question": question.text,
+                "options": options,
+                "correctOptionIndex": correct_option_index,
+                "points": question.points
+            })
+        
+        if not questions:
+            return Response({
+                "error": "No valid questions found for this quiz",
+                "quiz_id": quiz.id,
+                "quiz_title": quiz.title,
+                "course_id": course_id,
+                "debug_info": {
+                    "total_questions": quiz.questions.count(),
+                    "questions_with_answers": quiz.questions.filter(answers__isnull=False).distinct().count(),
+                    "questions_with_correct_answers": quiz.questions.filter(answers__is_correct=True).distinct().count()
+                }
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Format response to match frontend structure
+        time_per_question = quiz.time_limit // len(questions) if len(questions) > 0 and quiz.time_limit else 30
+        
+        response_data = {
+            "id": f"c{course_id}q{quiz.id}",
+            "courseId": str(course_id),
+            "title": quiz.title,
+            "timePerQuestion": time_per_question,
+            "timeUnit": "seconds",
+            "questions": questions
+        }
+        
+        return Response(response_data)
     
-    # Format response to match frontend structure
-    response_data = {
-        "id": f"c{course_id}q",
-        "courseId": str(course_id),
-        "title": quiz.title,
-        "timePerQuestion": quiz.time_limit // len(questions) if len(questions) > 0 else 30,
-        "timeUnit": "seconds",
-        "questions": questions
-    }
-    
-    return Response(response_data)
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        
+        # Log the error
+        logger.error(f"Error in quiz_data_for_frontend: {str(e)}")
+        logger.error(error_details)
+        
+        # Return detailed error information
+        return Response({
+            "error": "An error occurred while retrieving quiz data",
+            "details": str(e),
+            "traceback": error_details if settings.DEBUG else "Enable DEBUG mode to see traceback",
+            "course_id": course_id
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

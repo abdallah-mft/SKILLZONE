@@ -15,7 +15,7 @@ from PIL import Image
 class CourseModelTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        # Set up non-modified objects used by all test methods
+        
         pass
 
     def test_hard_course_validation(self):
@@ -35,9 +35,9 @@ class CourseModelTest(TestCase):
             description="Test Description",
             course_type="HARD",
             points_required=1000,
-            points=200,  # Changed from points_reward
-            rating=4.5,  # Keep as float
-            price="99.99",  # Changed to string
+            points=200,  
+            rating=4.5,  
+            price="99.99",  
             difficulty_level="BEGINNER"
         )
         self.assertEqual(course.title, "Valid Course")
@@ -80,7 +80,7 @@ class CourseModelTest(TestCase):
 
 class CoursePointsTestCase(TransactionTestCase):
     def setUp(self):
-        # Create test user
+        
         self.user = get_user_model().objects.create_user(
             username='testuser',
             password='testpass123'
@@ -90,7 +90,7 @@ class CoursePointsTestCase(TransactionTestCase):
         self.profile.points = 2000
         self.profile.save()
         
-        # Create test course
+        
         self.course = Course.objects.create(
             title="Test Course",
             description="Test Description",
@@ -100,7 +100,7 @@ class CoursePointsTestCase(TransactionTestCase):
             difficulty_level="BEGINNER"
         )
         
-        # Create test lessons
+        
         self.lesson1 = Lesson.objects.create(
             course=self.course,
             title="Lesson 1",
@@ -116,18 +116,18 @@ class CoursePointsTestCase(TransactionTestCase):
         """Test course unlocking and points deduction"""
         initial_points = self.profile.points
         
-        # Unlock the course
+        
         UnlockedCourse.objects.create(
             user=self.profile,
             course=self.course,
             points_spent=self.course.points_required
         )
         
-        # Update user points
+        
         self.profile.points -= self.course.points_required
         self.profile.save()
         
-        # Verify points deduction
+        
         self.profile.refresh_from_db()
         self.assertEqual(
             self.profile.points,
@@ -136,7 +136,7 @@ class CoursePointsTestCase(TransactionTestCase):
 
     def test_course_completion_reward(self):
         """Test course completion and points reward"""
-        # First unlock the course
+        
         UnlockedCourse.objects.create(
             user=self.profile,
             course=self.course
@@ -144,18 +144,18 @@ class CoursePointsTestCase(TransactionTestCase):
         
         initial_points = self.profile.points
         
-        # Create and complete progress
+        
         progress = CourseProgress.objects.create(
             user=self.profile,
             course=self.course
         )
         progress.completed_lessons.add(self.lesson1, self.lesson2)
         
-        # Award points
+        
         self.profile.points += self.course.points
         self.profile.save()
         
-        # Verify points reward
+        
         self.profile.refresh_from_db()
         self.assertEqual(
             self.profile.points,
@@ -164,24 +164,24 @@ class CoursePointsTestCase(TransactionTestCase):
 
 class CourseUploadTest(TestCase):
     def setUp(self):
-        # Create admin user
+        
         self.admin_user = get_user_model().objects.create_user(
             username='adminuser',
             password='adminpass123',
             is_staff=True
         )
         
-        # Create regular user (for permission testing)
+        
         self.regular_user = get_user_model().objects.create_user(
             username='regularuser',
             password='userpass123'
         )
         
-        # Set up API client
+        
         self.client = APIClient()
         
     def generate_test_image(self):
-        # Create a simple test image
+        
         file = io.BytesIO()
         image = Image.new('RGB', (100, 100), color='red')
         image.save(file, 'png')
@@ -190,10 +190,10 @@ class CourseUploadTest(TestCase):
         return file
         
     def test_upload_course_success(self):
-        # Authenticate as admin
+        
         self.client.force_authenticate(user=self.admin_user)
         
-        # Prepare course data
+        
         course_data = {
             'title': 'Test Course',
             'description': 'Test Description',
@@ -208,20 +208,20 @@ class CourseUploadTest(TestCase):
             'lessons': '[{"title": "Lesson 1", "duration": 15, "video_url": "https://example.com/video1"}]'
         }
         
-        # Make request
+        
         url = reverse('upload-course')
         response = self.client.post(url, course_data, format='multipart')
         
-        # Assert response
+        
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.data['success'])
         self.assertEqual(Course.objects.count(), 1)
         
     def test_upload_course_unauthorized(self):
-        # Authenticate as regular user
+        
         self.client.force_authenticate(user=self.regular_user)
         
-        # Prepare minimal course data
+        
         course_data = {
             'title': 'Test Course',
             'description': 'Test Description',
@@ -229,11 +229,11 @@ class CourseUploadTest(TestCase):
             'difficulty_level': 'BEGINNER'
         }
         
-        # Make request
+        
         url = reverse('upload-course')
         response = self.client.post(url, course_data, format='json')
         
-        # Assert response
+        
         self.assertEqual(response.status_code, 403)
         self.assertFalse(response.data['success'])
         self.assertEqual(Course.objects.count(), 0)

@@ -15,20 +15,20 @@ class Course(models.Model):
         ('ADVANCED', 'Advanced'),
     ]
     
-    # Fields to match frontend structure
+    
     title = models.CharField(max_length=255)
     description = models.TextField()
-    rating = models.FloatField(default=0.0, validators=[MinValueValidator(0.0), MaxValueValidator(5.0)])  # Keep as FloatField
-    duration = models.IntegerField(default=0)  # Duration in minutes
+    rating = models.FloatField(default=0.0, validators=[MinValueValidator(0.0), MaxValueValidator(5.0)])  
+    duration = models.IntegerField(default=0)  
     course_type = models.CharField(max_length=10, choices=COURSE_TYPES)
-    points = models.IntegerField(default=0)  # Renamed from points_reward
-    points_required = models.IntegerField(default=0)  # Points required to unlock the course
-    price = models.CharField(max_length=20, default="0.00")  # Changed to CharField
+    points = models.IntegerField(default=0)  
+    points_required = models.IntegerField(default=0)  
+    price = models.CharField(max_length=20, default="0.00")  
     
-    # Image field - use thumbnail if it exists, otherwise add this
+    
     image = models.ImageField(upload_to='courses/images/', blank=True, null=True)
     
-    # Additional fields for backend functionality
+    
     difficulty_level = models.CharField(max_length=15, choices=DIFFICULTY_LEVELS, default='BEGINNER')
     category = models.CharField(max_length=100, default='General')
     tags = models.CharField(max_length=255, blank=True)
@@ -51,13 +51,13 @@ class Course(models.Model):
 class Lesson(models.Model):
     course = models.ForeignKey(Course, related_name='lessons', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
-    number = models.IntegerField()  # Order within the course
-    duration = models.IntegerField(default=0)  # Duration in minutes
+    number = models.IntegerField()  
+    duration = models.IntegerField(default=0)  
     video_url = models.URLField(max_length=500)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    # Additional fields for backend functionality
+    
     content = models.TextField(blank=True)
     
     class Meta:

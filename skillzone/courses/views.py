@@ -1,3 +1,4 @@
+
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -8,7 +9,6 @@ from django.db.models import Avg, Q
 from django.db import transaction
 from django.conf import settings
 import logging
-# Update imports to use only what's available
 from .models import Course, Lesson, UnlockedCourse, UnlockedLesson, UserCourseProgress
 from .serializers import CourseSerializer, LessonSerializer, UserCourseProgressSerializer
 from quizzes.models import QuizAttempt
@@ -23,13 +23,11 @@ logger = logging.getLogger(__name__)
 def courses_list(request):
     """Get all courses with filters"""
     try:
-        # Get query parameters
         category = request.GET.get('category')
         difficulty = request.GET.get('difficulty')
         search = request.GET.get('search')
         course_type = request.GET.get('type')
         
-        # Safely convert page and per_page to integers with defaults
         try:
             page = int(request.GET.get('page', 1))
         except (ValueError, TypeError):
@@ -40,10 +38,8 @@ def courses_list(request):
         except (ValueError, TypeError):
             per_page = 10
 
-        # Base queryset
         courses = Course.objects.all()
 
-        # Apply filters
         if category:
             courses = courses.filter(category=category)
         if difficulty:
@@ -56,14 +52,12 @@ def courses_list(request):
                 Q(description__icontains=search)
             )
             
-        # Make sure all_categories and all_tags are defined
         all_categories = Course.objects.values_list('category', flat=True).distinct()
         all_tags = set()
         for tags_str in Course.objects.values_list('tags', flat=True).distinct():
             if tags_str:
                 all_tags.update([tag.strip() for tag in tags_str.split(',')])
 
-        # Calculate pagination
         total = courses.count()
         start = (page - 1) * per_page
         end = start + per_page
@@ -71,7 +65,6 @@ def courses_list(request):
 
         serializer = CourseSerializer(courses, many=True, context={'request': request})
         
-        # Safely get user points
         user_points = 0
         try:
             if hasattr(request.user, 'profile'):
@@ -137,7 +130,7 @@ def unlock_lesson(request, lesson_id):
         lesson = get_object_or_404(Lesson, id=lesson_id)
         user_profile = request.user.profile
         
-        # Check if already unlocked
+        
         if UnlockedLesson.objects.filter(user=user_profile, lesson=lesson).exists():
             return Response({
                 "success": False,
@@ -145,7 +138,7 @@ def unlock_lesson(request, lesson_id):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Check if user has enough points
+        
         if user_profile.points < lesson.points_required:
             return Response({
                 "success": False,
@@ -153,7 +146,7 @@ def unlock_lesson(request, lesson_id):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Deduct points and create unlock record
+        
         user_profile.points -= lesson.points_required
         user_profile.save()
         
@@ -184,7 +177,7 @@ def unlock_course(request, course_id):
         course = get_object_or_404(Course, id=course_id)
         user_profile = request.user.profile
         
-        # Check if course is already unlocked
+        
         already_unlocked = UnlockedCourse.objects.filter(
             user=user_profile,
             course=course
@@ -197,13 +190,13 @@ def unlock_course(request, course_id):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Get points required (default to 0 if not set)
+        
         points_required = getattr(course, 'points_required', 0)
         if points_required == 0 and course.course_type == 'HARD':
-            # Default value for HARD courses if not set
+            
             points_required = 1000
         
-        # Check if user has enough points
+        
         if user_profile.points < points_required:
             return Response({
                 "success": False,
@@ -211,21 +204,21 @@ def unlock_course(request, course_id):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Deduct points and unlock course
+        
         with transaction.atomic():
-            # Deduct points
+            
             user_profile.points -= points_required
             user_profile.save()
             
-            # Create unlock record
+            
             UnlockedCourse.objects.create(
                 user=user_profile,
                 course=course
             )
             
-            # Create progress record - Make sure to use user_profile here
+            
             UserCourseProgress.objects.create(
-                user=user_profile,  # This should be a Profile instance, not User
+                user=user_profile,  
                 course=course
             )
         
@@ -257,7 +250,7 @@ def mark_lesson_complete(request, lesson_id):
         lesson = get_object_or_404(Lesson, id=lesson_id)
         user_profile = request.user.profile
         
-        # First check if the course is unlocked (for HARD courses)
+        
         course = lesson.course
         if course.course_type == 'HARD':
             course_unlocked = UnlockedCourse.objects.filter(
@@ -272,13 +265,13 @@ def mark_lesson_complete(request, lesson_id):
                     "data": None
                 }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Get or create the unlocked lesson record
+        
         unlocked_lesson, created = UnlockedLesson.objects.get_or_create(
             user=user_profile,
             lesson=lesson
         )
         
-        # Mark as completed
+        
         if not unlocked_lesson.completed_at:
             unlocked_lesson.completed_at = timezone.now()
             unlocked_lesson.save()
@@ -308,13 +301,13 @@ def course_statistics(request, course_id):
         course = get_object_or_404(Course, id=course_id)
         user_profile = request.user.profile
         
-        # Get user's progress
+        
         progress = CourseProgress.objects.filter(
             user=user_profile,
             course=course
         ).first()
         
-        # Calculate time spent
+        
         time_spent = 0
         if progress:
             completed_lessons = progress.completed_lessons.count()
@@ -323,7 +316,7 @@ def course_statistics(request, course_id):
                 quiz.time_limit for quiz in progress.completed_quizzes.all()
             )
         
-        # Get overall course statistics
+        
         total_students = CourseProgress.objects.filter(course=course).count()
         completion_rate = (
             CourseProgress.objects.filter(
@@ -332,7 +325,7 @@ def course_statistics(request, course_id):
             ).count() / total_students * 100
         ) if total_students > 0 else 0
         
-        # Get average quiz scores
+        
         quiz_scores = []
         for quiz in course.quizzes.all():
             attempts = QuizAttempt.objects.filter(
@@ -381,7 +374,7 @@ from rest_framework.decorators import api_view, permission_classes
 from .models import Course, Lesson, UserCourseProgress
 from .serializers import CourseSerializer, LessonSerializer, UserCourseProgressSerializer
 
-# API ViewSets
+
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -419,16 +412,16 @@ def mark_lesson_complete(request, lesson_id):
     lesson = get_object_or_404(Lesson, id=lesson_id)
     course = lesson.course
     
-    # Get or create progress record
+    
     progress, created = UserCourseProgress.objects.get_or_create(
         user=request.user,
         course=course
     )
     
-    # Add lesson to completed lessons
+    
     progress.completed_lessons.add(lesson)
     
-    # Check if all lessons are completed
+    
     total_lessons = course.lessons.count()
     completed_lessons = progress.completed_lessons.count()
     
@@ -448,18 +441,18 @@ def user_course_inventory(request):
     try:
         user_profile = request.user.profile
         
-        # Get all unlocked courses for this user
+        
         unlocked_courses = UnlockedCourse.objects.filter(
             user=user_profile
         ).select_related('course')
         
-        # Get the course objects
+        
         courses = [uc.course for uc in unlocked_courses]
         
-        # Serialize the courses
+        
         serializer = CourseSerializer(courses, many=True, context={'request': request})
         
-        # Add unlocked_at date to each course
+        
         courses_data = serializer.data
         unlocked_dates = {uc.course.id: uc.unlocked_at for uc in unlocked_courses}
         
@@ -468,7 +461,7 @@ def user_course_inventory(request):
             if course_id in unlocked_dates:
                 course_data['unlocked_at'] = unlocked_dates[course_id]
         
-        # Count courses by type
+        
         soft_count = sum(1 for c in courses_data if c.get('course_type') == 'SOFT')
         hard_count = sum(1 for c in courses_data if c.get('course_type') == 'HARD')
         
@@ -498,9 +491,8 @@ def user_course_inventory(request):
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 def upload_course(request):
-    """Upload a new course to the system"""
     try:
-        # Debug information
+        
         import logging
         logger = logging.getLogger(__name__)
         
@@ -514,7 +506,7 @@ def upload_course(request):
             logger.info(f"Profile fields: {vars(request.user.profile)}")
             logger.info(f"Is teacher: {getattr(request.user.profile, 'is_teacher', False)}")
         
-        # Check if user has admin privileges or is a teacher
+        
         is_admin = request.user.is_staff or request.user.is_superuser
         is_teacher = hasattr(request.user, 'profile') and getattr(request.user.profile, 'is_teacher', False)
         
@@ -529,10 +521,10 @@ def upload_course(request):
                 "data": None
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Get data from request
+        
         data = request.data
         
-        # Validate required fields
+        
         required_fields = ['title', 'description', 'course_type', 'difficulty_level']
         for field in required_fields:
             if field not in data:
@@ -542,7 +534,7 @@ def upload_course(request):
                     "data": None
                 }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Validate course type
+        
         course_type = data.get('course_type').upper()
         if course_type not in [choice[0] for choice in Course.COURSE_TYPES]:
             return Response({
@@ -551,7 +543,7 @@ def upload_course(request):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Validate difficulty level
+        
         difficulty_level = data.get('difficulty_level').upper()
         if difficulty_level not in [choice[0] for choice in Course.DIFFICULTY_LEVELS]:
             return Response({
@@ -560,7 +552,7 @@ def upload_course(request):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # For HARD courses, points_required is mandatory
+        
         if course_type == 'HARD' and (not data.get('points_required') or int(data.get('points_required', 0)) <= 0):
             return Response({
                 "success": False,
@@ -568,29 +560,29 @@ def upload_course(request):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create the course
+        
         course = Course(
             title=data.get('title'),
             description=data.get('description'),
             course_type=course_type,
             difficulty_level=difficulty_level,
             points_required=int(data.get('points_required', 0)),
-            points=int(data.get('points', 0)),  # Changed from points_reward
+            points=int(data.get('points', 0)),  
             duration=int(data.get('duration', 0)),
-            price=str(data.get('price', '0.00')),  # Changed to string
-            rating=float(data.get('rating', 0.0)),  # Keep as float
+            price=str(data.get('price', '0.00')),  
+            rating=float(data.get('rating', 0.0)),  
             category=data.get('category', 'General'),
             tags=data.get('tags', '')
         )
         
-        # Handle image upload if provided
+        
         if 'image' in request.FILES:
             course.image = request.FILES['image']
         
-        # Save the course
+        
         course.save()
         
-        # Handle lessons if provided
+        
         lessons_data = data.get('lessons', [])
         if isinstance(lessons_data, str):
             try:
@@ -609,7 +601,7 @@ def upload_course(request):
             )
             lesson.save()
         
-        # Return the created course
+        
         serializer = CourseSerializer(course, context={'request': request})
         return Response({
             "success": True,
@@ -642,7 +634,7 @@ def course_lessons(request, course_id):
         course = get_object_or_404(Course, id=course_id)
         lessons = Lesson.objects.filter(course=course).order_by('number')
         
-        # Serialize the lessons
+        
         serializer = LessonSerializer(lessons, many=True)
         
         return Response({

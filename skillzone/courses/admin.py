@@ -12,4 +12,4 @@ class LessonAdmin(admin.ModelAdmin):
     list_display = ('title', 'course')
     list_filter = ('course',)
     search_fields = ('title',)
-# Register your models here.
+

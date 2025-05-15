@@ -29,6 +29,8 @@ from django.utils.http import urlsafe_base64_decode
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from .permissions import IsEmailVerified
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.exceptions import TokenError
 
 logger = logging.getLogger(__name__)
 

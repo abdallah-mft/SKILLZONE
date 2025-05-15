@@ -117,6 +117,28 @@ Response:
 POST /api/v1/token/refresh/
 ```
 
+Request Body:
+```json
+{
+  "refresh": "YOUR_REFRESH_TOKEN"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "access": "NEW_ACCESS_TOKEN"
+  }
+}
+```
+
+**Troubleshooting:**
+- If you get a 404 error, ensure you've added the TokenRefreshView to your URLs
+- Check that you're using the correct URL path (/api/v1/token/refresh/)
+- Verify that rest_framework_simplejwt is in your INSTALLED_APPS
+
 ### 👤 User Endpoints
 - `GET /api/v1/users/profile/` - Get current user profile
 - `POST /api/v1/users/update-points/` - Update user points

@@ -177,7 +177,7 @@ def unlock_course(request, course_id):
         course = get_object_or_404(Course, id=course_id)
         user_profile = request.user.profile
         
-        
+        # Check if already unlocked
         already_unlocked = UnlockedCourse.objects.filter(
             user=user_profile,
             course=course
@@ -190,13 +190,19 @@ def unlock_course(request, course_id):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # Get the actual points required from the course
+        points_required = course.points_required
         
-        points_required = getattr(course, 'points_required', 0)
+        # Only use default 1000 if points_required is 0 AND course type is HARD
+        # This is the bug - we should respect the actual points_required value when it's set
         if points_required == 0 and course.course_type == 'HARD':
-            
             points_required = 1000
         
+        # Log the points calculation for debugging
+        logger.info(f"Course {course_id} unlock - Required points: {points_required}, " 
+                   f"Course points_required: {course.points_required}, Type: {course.course_type}")
         
+        # Check if user has enough points
         if user_profile.points < points_required:
             return Response({
                 "success": False,
@@ -204,19 +210,18 @@ def unlock_course(request, course_id):
                 "data": None
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        
+        # Process the transaction
         with transaction.atomic():
+            # Deduct points using the profile method for safety
+            user_profile.deduct_points(points_required)
             
-            user_profile.points -= points_required
-            user_profile.save()
-            
-            
+            # Create unlocked course record
             UnlockedCourse.objects.create(
                 user=user_profile,
                 course=course
             )
             
-            
+            # Create progress tracking record
             UserCourseProgress.objects.create(
                 user=user_profile,  
                 course=course
@@ -227,10 +232,19 @@ def unlock_course(request, course_id):
             "message": "Course unlocked successfully",
             "data": {
                 "course_id": course.id,
+                "course_title": course.title,
+                "points_spent": points_required,
                 "points_remaining": user_profile.points
             }
         })
         
+    except ValueError as e:
+        # Handle specific value errors (like from deduct_points)
+        return Response({
+            "success": False,
+            "message": str(e),
+            "data": None
+        }, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         import traceback
         logger.error(f"Error unlocking course {course_id}: {str(e)}")

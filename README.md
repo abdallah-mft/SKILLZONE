@@ -6,6 +6,31 @@
 
 SkillZone is a comprehensive full-stack learning platform built with Django REST Framework and Flutter. It delivers both free (SOFT) and premium (HARD) courses, complete with user achievements, interactive quizzes, detailed progress tracking, and a gamified reward system to enhance the learning experience.
 
+## 🙌 Special Thanks
+
+- **Frontend Developer**: [Brahim Benzekri](https://github.com/BrahimBenzekri) - SkillZone without u is just an EmptyZone + Chikor t3 atay 
+- **Project Supervisor**: [Mdm Lydia Imene Allou](https://github.com/lydia-imene-allou) - for guidance and invaluable insights throughout the development process.
+
+## 💡 Project Concept
+
+SkillZone introduces an innovative approach to e-learning through a unique points-based progression system:
+
+### Points & Skills System
+
+- 🎯 **Dual Learning Path**: The platform distinguishes between Soft Skills and Hard Skills courses
+- 🆓 **Free Soft Skills**: Access to comprehensive soft skills courses (leadership, communication, etc.) at no cost
+- 💰 **Premium Hard Skills**: Technical courses (programming, design, etc.) are unlocked using points
+- ⭐ **Points Economy**:
+  - Earn points by completing soft skills courses
+  - Use accumulated points to unlock premium hard skills content
+  - Progress through different levels (Rookie → Explorer → Achiever → Master → Expert)
+- 🏆 **Level System**: Track your learning journey through achievement badges and level progression
+
+This gamified approach encourages users to develop a well-rounded skill set, recognizing the importance of both technical expertise and interpersonal abilities in professional growth.
+
+## 🚧 Development Status
+Some features might be incomplete or subject to change as development progresses.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Django](https://img.shields.io/badge/Django-5.2-green.svg)](https://www.djangoproject.com/)
 [![DRF](https://img.shields.io/badge/DRF-3.16-red.svg)](https://www.django-rest-framework.org/)
@@ -116,6 +141,28 @@ Response:
 ```http
 POST /api/v1/token/refresh/
 ```
+
+Request Body:
+```json
+{
+  "refresh": "YOUR_REFRESH_TOKEN"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "access": "NEW_ACCESS_TOKEN"
+  }
+}
+```
+
+**Troubleshooting:**
+- If you get a 404 error, ensure you've added the TokenRefreshView to your URLs
+- Check that you're using the correct URL path (/api/v1/token/refresh/)
+- Verify that rest_framework_simplejwt is in your INSTALLED_APPS
 
 ### 👤 User Endpoints
 - `GET /api/v1/users/profile/` - Get current user profile
@@ -410,3 +457,45 @@ SkillZone is currently in active development. We welcome contributions and feedb
 ## 📞 Contact
 
 For questions or support, please open an issue on GitHub or contact the project maintainers directly.
+
+## 📦 Key Dependencies
+
+### Core Framework
+- Django 5.2
+- Django REST Framework 3.16.0
+
+### Authentication & Security
+- djangorestframework-simplejwt 5.5.0
+- PyJWT 2.9.0
+
+### Database
+- psycopg2-binary 2.9.10 (PostgreSQL adapter)
+- dj-database-url 2.3.0
+
+### Caching & Performance
+- redis 5.2.1
+- django-cache-memoize 0.2.1
+
+### Image Processing
+- Pillow 11.1.0
+
+### API & Cross-Origin
+- django-cors-headers 4.7.0
+
+### Cloud Services
+- firebase-admin 6.7.0 (Push notifications)
+- google-cloud-storage 3.1.0
+- google-cloud-firestore 2.20.1
+
+### Testing
+- pytest 8.3.5
+- pytest-django 4.11.1
+
+### Deployment
+- gunicorn 23.0.0
+- whitenoise 6.9.0
+
+### Utilities
+- python-dotenv 1.1.0
+- asgiref 3.8.1
+- sqlparse 0.5.3

@@ -6,6 +6,31 @@
 
 SkillZone is a comprehensive full-stack learning platform built with Django REST Framework and Flutter. It delivers both free (SOFT) and premium (HARD) courses, complete with user achievements, interactive quizzes, detailed progress tracking, and a gamified reward system to enhance the learning experience.
 
+## 🙌 Special Thanks
+
+- **Frontend Developer**: [Brahim Benzekri](https://github.com/BrahimBenzekri) - SkillZone without u is just an EmptyZone + Chikor t3 atay 
+- **Project Supervisor**: [Mdm Lydia Imene Allou](https://github.com/lydia-imene-allou) - for guidance and invaluable insights throughout the development process.
+
+## 💡 Project Concept
+
+SkillZone introduces an innovative approach to e-learning through a unique points-based progression system:
+
+### Points & Skills System
+
+- 🎯 **Dual Learning Path**: The platform distinguishes between Soft Skills and Hard Skills courses
+- 🆓 **Free Soft Skills**: Access to comprehensive soft skills courses (leadership, communication, etc.) at no cost
+- 💰 **Premium Hard Skills**: Technical courses (programming, design, etc.) are unlocked using points
+- ⭐ **Points Economy**:
+  - Earn points by completing soft skills courses
+  - Use accumulated points to unlock premium hard skills content
+  - Progress through different levels (Rookie → Explorer → Achiever → Master → Expert)
+- 🏆 **Level System**: Track your learning journey through achievement badges and level progression
+
+This gamified approach encourages users to develop a well-rounded skill set, recognizing the importance of both technical expertise and interpersonal abilities in professional growth.
+
+## 🚧 Development Status
+Some features might be incomplete or subject to change as development progresses.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Django](https://img.shields.io/badge/Django-5.2-green.svg)](https://www.djangoproject.com/)
 [![DRF](https://img.shields.io/badge/DRF-3.16-red.svg)](https://www.django-rest-framework.org/)

@@ -432,3 +432,45 @@ SkillZone is currently in active development. We welcome contributions and feedb
 ## 📞 Contact
 
 For questions or support, please open an issue on GitHub or contact the project maintainers directly.
+
+## 📦 Key Dependencies
+
+### Core Framework
+- Django 5.2
+- Django REST Framework 3.16.0
+
+### Authentication & Security
+- djangorestframework-simplejwt 5.5.0
+- PyJWT 2.9.0
+
+### Database
+- psycopg2-binary 2.9.10 (PostgreSQL adapter)
+- dj-database-url 2.3.0
+
+### Caching & Performance
+- redis 5.2.1
+- django-cache-memoize 0.2.1
+
+### Image Processing
+- Pillow 11.1.0
+
+### API & Cross-Origin
+- django-cors-headers 4.7.0
+
+### Cloud Services
+- firebase-admin 6.7.0 (Push notifications)
+- google-cloud-storage 3.1.0
+- google-cloud-firestore 2.20.1
+
+### Testing
+- pytest 8.3.5
+- pytest-django 4.11.1
+
+### Deployment
+- gunicorn 23.0.0
+- whitenoise 6.9.0
+
+### Utilities
+- python-dotenv 1.1.0
+- asgiref 3.8.1
+- sqlparse 0.5.3

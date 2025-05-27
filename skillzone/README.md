@@ -153,16 +153,15 @@ Response:
 ```json
 {
   "success": true,
+  "message": "Token refreshed successfully",
   "data": {
     "access": "NEW_ACCESS_TOKEN"
-  }
+  },
+  "errors": null
 }
 ```
 
-**Troubleshooting:**
-- If you get a 404 error, ensure you've added the TokenRefreshView to your URLs
-- Check that you're using the correct URL path (/api/v1/token/refresh/)
-- Verify that rest_framework_simplejwt is in your INSTALLED_APPS
+> **Note:** If you're getting a 404 error, make sure you're using the exact URL: `/api/v1/token/refresh/` with a trailing slash.
 
 ### 👤 User Endpoints
 - `GET /api/v1/users/profile/` - Get current user profile

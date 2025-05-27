@@ -693,6 +693,32 @@ class EmailVerificationView(APIView):
                 'message': 'Invalid verification token'
             }, status=status.HTTP_400_BAD_REQUEST)
 
+class CustomTokenRefreshView(TokenRefreshView):
+    """
+    Custom token refresh view that formats the response to match our API standards
+    """
+    def post(self, request, *args, **kwargs):
+        try:
+            # Call the parent class's post method to get the original response
+            original_response = super().post(request, *args, **kwargs)
+            
+            # Format the response to match our API standards
+            formatted_response = {
+                "success": True,
+                "message": "Token refreshed successfully",
+                "data": original_response.data,
+                "errors": None
+            }
+            
+            return Response(formatted_response, status=original_response.status_code)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "message": "Failed to refresh token",
+                "data": None,
+                "errors": {"detail": str(e)}
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 

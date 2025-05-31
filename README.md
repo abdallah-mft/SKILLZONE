@@ -38,6 +38,7 @@ Some features might be incomplete or subject to change as development progresses
 
 SkillZone Flutter : https://github.com/BrahimBenzekri/SkillZone 
 Landing Page : https://skillzoneweb.netlify.app/ 
+https://github.com/raniakd29/skillzonewebsite
 
 ## 📋 Table of Contents
 

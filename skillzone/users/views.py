@@ -293,30 +293,13 @@ def logout(request):
                 'errors': {'refresh_token': ['This field is required']}
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            
-            profile = request.user.profile
-            if profile.device_token:
-                profile.device_token = None
-                profile.save()
-
-            return Response({
+        return Response({
                 'status': True,
                 'message': 'Successfully logged out',
                 'data': None,
                 'errors': None
             }, status=status.HTTP_200_OK)
-
-        except TokenError as e:
-            return Response({
-                'status': False,
-                'message': 'Invalid or expired refresh token',
-                'data': None,
-                'errors': {'refresh_token': ['Invalid or expired token']}
-            }, status=status.HTTP_400_BAD_REQUEST)
-
+            
     except Exception as e:
         return Response({
             'status': False,

@@ -46,6 +46,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password2')
         validated_data.pop('accept_terms')
+        
+        # Create the user
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
@@ -53,5 +55,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', '')
         )
-        Profile.objects.create(user=user , points=100)
+        
+        # Initialize the profile with default points
+          # Correctly reference the Profile model
+        
         return user

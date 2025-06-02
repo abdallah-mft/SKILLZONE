@@ -53,5 +53,5 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', '')
         )
-        profile.objects.create(user=user , points=100)
+        Profile.objects.create(user=user , points=100)
         return user
